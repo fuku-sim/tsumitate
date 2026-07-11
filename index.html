@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>積立シミュレーター</title>
+</head>
+<body>
+<style>
+  :root {
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink-1: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-3: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --good: #006300;
+    /* ordinal blue ramp: higher rate = higher contrast on this surface */
+    --s-03: #86b6ef;   /* 貯金 0.3% */
+    --s-18: #5598e7;   /* 国債 1.8% */
+    --s-30: #2a78d6;   /* インデックス 3% */
+    --s-50: #1c5cab;   /* インデックス 5% */
+    --s-70: #104281;   /* インデックス 7% */
+    --principal: #898781;
+    --tooltip-bg: rgba(252,252,251,0.97);
+    --btn-bg: #0b0b0b;
+    --btn-ink: #fcfcfb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink-1: #ffffff;
+      --ink-2: #c3c2b7;
+      --ink-3: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255,255,255,0.10);
+      --good: #0ca30c;
+      --s-03: #184f95;
+      --s-18: #2a78d6;
+      --s-30: #5598e7;
+      --s-50: #86b6ef;
+      --s-70: #b7d3f6;
+      --tooltip-bg: rgba(26,26,25,0.97);
+      --btn-bg: #fcfcfb;
+      --btn-ink: #0b0b0b;
+    }
+  }
+  :root[data-theme="light"] {
+    --page: #f9f9f7; --surface: #fcfcfb; --ink-1: #0b0b0b; --ink-2: #52514e;
+    --ink-3: #898781; --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --good: #006300;
+    --s-03: #86b6ef; --s-18: #5598e7; --s-30: #2a78d6; --s-50: #1c5cab; --s-70: #104281;
+    --principal: #898781; --tooltip-bg: rgba(252,252,251,0.97);
+    --btn-bg: #0b0b0b; --btn-ink: #fcfcfb;
+  }
+  :root[data-theme="dark"] {
+    --page: #0d0d0d; --surface: #1a1a19; --ink-1: #ffffff; --ink-2: #c3c2b7;
+    --ink-3: #898781; --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --good: #0ca30c;
+    --s-03: #184f95; --s-18: #2a78d6; --s-30: #5598e7; --s-50: #86b6ef; --s-70: #b7d3f6;
+    --principal: #898781; --tooltip-bg: rgba(26,26,25,0.97);
+    --btn-bg: #fcfcfb; --btn-ink: #0b0b0b;
+  }
+
+  body {
+    background: var(--page);
+    color: var(--ink-1);
+    font-family: system-ui, -apple-system, "Hiragino Sans", "Segoe UI", "Yu Gothic UI", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 36px 16px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  header h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+    margin: 0 0 6px;
+  }
+  header p {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 0.88rem;
+    max-width: 44em;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+  }
+  button.play {
+    appearance: none;
+    border: none;
+    background: var(--btn-bg);
+    color: var(--btn-ink);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    min-width: 118px;
+  }
+  button.play:focus-visible, input:focus-visible {
+    outline: 2px solid var(--s-30);
+    outline-offset: 2px;
+  }
+  .ctl-group { display: flex; align-items: center; gap: 6px; }
+  .ctl-group label { font-size: 0.82rem; color: var(--ink-2); white-space: nowrap; }
+  .ctl-group .unit { font-size: 0.82rem; color: var(--ink-2); }
+  input[type=number] {
+    font: inherit;
+    font-size: 0.92rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-1);
+    background: var(--surface);
+    border: 1px solid var(--axis);
+    border-radius: 7px;
+    padding: 6px 4px 6px 10px;
+    width: 4.2em;
+  }
+  .scrub { display: flex; align-items: center; gap: 10px; flex: 1 1 220px; min-width: 180px; }
+  .scrub input[type=range] {
+    flex: 1;
+    accent-color: var(--s-50);
+    min-width: 100px;
+  }
+  .year-readout {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.88rem;
+    font-weight: 600;
+    min-width: 5.5em;
+    text-align: right;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    font-size: 0.8rem;
+    color: var(--ink-2);
+    margin-bottom: 8px;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .chip { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  .chip.dash {
+    background: repeating-linear-gradient(90deg, var(--principal) 0 4px, transparent 4px 7px);
+    height: 2px;
+  }
+
+  .chart-holder { position: relative; }
+  .chart-holder svg { display: block; width: 100%; }
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--tooltip-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    min-width: 172px;
+    display: none;
+    z-index: 5;
+  }
+  .tooltip .tt-title { font-weight: 700; margin-bottom: 4px; }
+  .tooltip .tt-row { display: flex; align-items: center; gap: 7px; justify-content: space-between; }
+  .tooltip .tt-row .nm { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+  .tooltip .tt-row .vl { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .tt-chip { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .tile .t-name {
+    font-size: 0.74rem;
+    color: var(--ink-2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.02em;
+  }
+  .tile .t-value {
+    font-size: 1.18rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .tile .t-sub {
+    font-size: 0.74rem;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .tile .t-sub.gain { color: var(--good); }
+
+  details.tablebox { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+  details.tablebox summary {
+    cursor: pointer;
+    padding: 12px 18px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+  details.tablebox[open] summary { border-bottom: 1px solid var(--border); }
+  .tbl-scroll { overflow-x: auto; padding: 6px 18px 16px; }
+  table.data {
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    width: 100%;
+    min-width: 560px;
+  }
+  table.data th, table.data td {
+    text-align: right;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--grid);
+    white-space: nowrap;
+  }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+  table.data thead th { color: var(--ink-2); font-weight: 600; }
+
+  footer.note { font-size: 0.75rem; color: var(--ink-3); max-width: 46em; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>積立シミュレーター — どこに置くと どう増えるか</h1>
+    <p>毎月の積立額と年数を自由に変えて、貯金（年0.3%）・個人向け国債（年1.8%）・インデックス投資（年3% / 5% / 7%）の資産推移を月次複利で比較できます。「放置」に年数を入れると、積立をやめた後も運用だけ続けた場合が見られます。</p>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <button class="play" id="playBtn">▶ 再生</button>
+      <div class="ctl-group">
+        <label for="amtIn">毎月</label>
+        <input type="number" id="amtIn" value="10" min="0.5" max="1000" step="0.5" inputmode="decimal">
+        <span class="unit">万円</span>
+      </div>
+      <div class="ctl-group">
+        <label for="contribIn">積立</label>
+        <input type="number" id="contribIn" value="15" min="1" max="60" step="1" inputmode="numeric">
+        <span class="unit">年</span>
+      </div>
+      <div class="ctl-group">
+        <label for="coastIn">その後放置</label>
+        <input type="number" id="coastIn" value="15" min="0" max="60" step="1" inputmode="numeric">
+        <span class="unit">年</span>
+      </div>
+      <div class="scrub">
+        <input type="range" id="scrubber" min="0" max="360" value="360" step="1" aria-label="経過月">
+        <span class="year-readout" id="yearReadout">30年 0ヶ月</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="legend" id="legend"></div>
+    <div class="chart-holder" id="chartHolder">
+      <svg id="chart" role="img" aria-label="積立資産の推移グラフ"></svg>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <details class="tablebox">
+    <summary>表で見る（年ごとの資産額）</summary>
+    <div class="tbl-scroll"><table class="data" id="dataTable"></table></div>
+  </details>
+
+  <footer class="note">
+    ※ 利率は年率を12分割して月次複利で計算（毎月末に積立）。「その後放置」の期間は追加入金なしで運用だけを続けます。税金・手数料・インフレは考慮していません。インデックス投資の利回りは変動し、元本割れの可能性があります。
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var SERIES = [
+    { key: 'r70', name: 'インデックス投資 7%', short: '7%',   rate: 0.07,  cssVar: '--s-70' },
+    { key: 'r50', name: 'インデックス投資 5%', short: '5%',   rate: 0.05,  cssVar: '--s-50' },
+    { key: 'r30', name: 'インデックス投資 3%', short: '3%',   rate: 0.03,  cssVar: '--s-30' },
+    { key: 'r18', name: '個人向け国債 1.8%',   short: '国債1.8%', rate: 0.018, cssVar: '--s-18' },
+    { key: 'r03', name: '貯金 0.3%',           short: '貯金0.3%', rate: 0.003, cssVar: '--s-03' },
+    { key: 'pr',  name: '元本（積立総額）',     short: '元本',  rate: 0,     cssVar: '--principal', dashed: true }
+  ];
+
+  var svg = document.getElementById('chart');
+  var holder = document.getElementById('chartHolder');
+  var tooltip = document.getElementById('tooltip');
+  var playBtn = document.getElementById('playBtn');
+  var amtIn = document.getElementById('amtIn');
+  var contribIn = document.getElementById('contribIn');
+  var coastIn = document.getElementById('coastIn');
+  var scrubber = document.getElementById('scrubber');
+  var yearReadout = document.getElementById('yearReadout');
+  var tilesEl = document.getElementById('tiles');
+  var legendEl = document.getElementById('legend');
+  var tableEl = document.getElementById('dataTable');
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var monthly = 100000;  // yen
+  var amtMan = 10;       // input value in 万円
+  var contribYears = 15;
+  var coastYears = 15;
+  var years = 30;
+  var nMonths = 360;
+  var stopM = 180;       // last month a contribution is made
+  var data = [];         // data[si][m] = balance after m months
+  var yMax = 1;
+  var tCur = 360;        // current time position in months (float)
+  var playing = false;
+  var rafId = null;
+
+  // ---- inputs ----
+  function clampNum(el, min, max, fallback) {
+    var v = parseFloat(el.value);
+    if (isNaN(v)) v = fallback;
+    v = Math.max(min, Math.min(max, v));
+    el.value = String(v);
+    return v;
+  }
+  function readInputs() {
+    amtMan = clampNum(amtIn, 0.5, 1000, 10);
+    contribYears = Math.round(clampNum(contribIn, 1, 60, 15));
+    coastYears = Math.round(clampNum(coastIn, 0, 60, 0));
+    monthly = amtMan * 10000;
+    years = contribYears + coastYears;
+  }
+
+  // ---- math ----
+  function computeSeries() {
+    nMonths = years * 12;
+    stopM = contribYears * 12;
+    data = SERIES.map(function (s) {
+      var arr = new Float64Array(nMonths + 1);
+      var i = s.rate / 12;
+      var bal = 0;
+      arr[0] = 0;
+      for (var m = 1; m <= nMonths; m++) {
+        bal = bal * (1 + i) + (m <= stopM ? monthly : 0);
+        arr[m] = bal;
+      }
+      return arr;
+    });
+    yMax = niceCeil(data[0][nMonths] * 1.04);
+    scrubber.max = String(nMonths);
+  }
+
+  function niceCeil(v) {
+    var pow = Math.pow(10, Math.floor(Math.log10(v)));
+    var f = v / pow;
+    var nice = f <= 1 ? 1 : f <= 1.25 ? 1.25 : f <= 1.5 ? 1.5 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 3 ? 3 : f <= 4 ? 4 : f <= 5 ? 5 : f <= 8 ? 8 : 10;
+    return nice * pow;
+  }
+
+  function valAt(si, t) { // t = months, float
+    var arr = data[si];
+    var m0 = Math.floor(t), m1 = Math.min(m0 + 1, nMonths);
+    var f = t - m0;
+    return arr[m0] * (1 - f) + arr[m1] * f;
+  }
+
+  // ---- formatting ----
+  function fmtYen(v) {
+    if (v >= 1e8) {
+      var oku = v / 1e8;
+      return (oku >= 10 ? Math.round(oku * 10) / 10 : Math.round(oku * 100) / 100).toLocaleString('ja-JP') + '億円';
+    }
+    if (v >= 1e4) return Math.round(v / 1e4).toLocaleString('ja-JP') + '万円';
+    return Math.round(v).toLocaleString('ja-JP') + '円';
+  }
+  function fmtAxis(v) {
+    if (v === 0) return '0';
+    if (v >= 1e8) {
+      var oku = v / 1e8;
+      return (Math.round(oku * 100) / 100).toLocaleString('ja-JP') + '億';
+    }
+    var man = Math.round(v / 1e4);
+    return (narrow ? String(man) : man.toLocaleString('ja-JP')) + '万';
+  }
+  function fmtTime(t) {
+    var y = Math.floor(t / 12), m = Math.round(t - y * 12);
+    if (m === 12) { y += 1; m = 0; }
+    return y + '年 ' + m + 'ヶ月';
+  }
+  function fmtMan(man) {
+    return (man % 1 === 0 ? man : Math.round(man * 10) / 10).toLocaleString('ja-JP');
+  }
+
+  // ---- chart geometry ----
+  var W = 0, H = 420, narrow = false;
+  var PAD = { top: 18, right: 96, bottom: 34, left: 56 };
+
+  function xScale(t) { return PAD.left + (t / nMonths) * (W - PAD.left - PAD.right); }
+  function yScale(v) { return PAD.top + (1 - v / yMax) * (H - PAD.top - PAD.bottom); }
+
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    (parent || svg).appendChild(e);
+    return e;
+  }
+
+  var gGrid, gLines, gLabels, gCross, overlay;
+  var pathEls = [], endLabelEls = [], crossDots = [];
+
+  function buildChart() {
+    svg.innerHTML = '';
+    W = holder.clientWidth || 900;
+    narrow = W < 560;
+    if (narrow) { PAD.right = 74; PAD.left = 52; H = 360; } else { PAD.right = 96; PAD.left = 56; H = 420; }
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('height', H);
+
+    gGrid = el('g', {});
+    gLines = el('g', {});
+    gLabels = el('g', {});
+    gCross = el('g', { 'visibility': 'hidden' });
+
+    // gridlines + y labels
+    var steps = 5;
+    for (var i = 0; i <= steps; i++) {
+      var v = yMax * i / steps;
+      var y = yScale(v);
+      el('line', { x1: PAD.left, x2: W - PAD.right, y1: y, y2: y, stroke: i === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, gGrid);
+      var t = el('text', { x: PAD.left - 8, y: y + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--ink-3)' }, gGrid);
+      t.textContent = fmtAxis(v);
+      t.style.fontVariantNumeric = 'tabular-nums';
+    }
+    // contribution-stop marker
+    if (stopM < nMonths) {
+      var sx = xScale(stopM);
+      el('line', { x1: sx, x2: sx, y1: PAD.top, y2: H - PAD.bottom, stroke: 'var(--axis)', 'stroke-width': 1, 'stroke-dasharray': '2 4' }, gGrid);
+      var mtL = el('text', { x: sx - 8, y: PAD.top + 12, 'text-anchor': 'end', 'font-size': 10.5, fill: 'var(--ink-2)', 'font-weight': 600 }, gGrid);
+      mtL.textContent = '積立中（' + contribYears + '年間）';
+      var mtR = el('text', { x: sx + 8, y: PAD.top + 12, 'text-anchor': 'start', 'font-size': 10.5, fill: 'var(--ink-2)', 'font-weight': 600 }, gGrid);
+      mtR.textContent = '放置（運用のみ）';
+    }
+    // x ticks
+    var xStepYears = years <= 10 ? 2 : (years <= 32 ? 5 : 10);
+    for (var yr = 0; yr <= years; yr += xStepYears) {
+      var x = xScale(yr * 12);
+      el('line', { x1: x, x2: x, y1: H - PAD.bottom, y2: H - PAD.bottom + 5, stroke: 'var(--axis)', 'stroke-width': 1 }, gGrid);
+      var tx = el('text', { x: x, y: H - PAD.bottom + 20, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--ink-3)' }, gGrid);
+      tx.textContent = yr === 0 ? '開始' : yr + '年';
+    }
+
+    // series paths + end labels
+    pathEls = []; endLabelEls = []; crossDots = [];
+    SERIES.forEach(function (s) {
+      var p = el('path', {
+        fill: 'none',
+        stroke: 'var(' + s.cssVar + ')',
+        'stroke-width': s.dashed ? 1.6 : 2,
+        'stroke-linejoin': 'round',
+        'stroke-linecap': 'round'
+      }, gLines);
+      if (s.dashed) p.setAttribute('stroke-dasharray', '5 4');
+      pathEls.push(p);
+
+      var g = el('g', {}, gLabels);
+      var dot = el('circle', { r: 3.5, fill: 'var(' + s.cssVar + ')' }, g);
+      var t1 = el('text', { 'font-size': 11.5, 'font-weight': 700, fill: 'var(--ink-1)' }, g);
+      var t2 = el('text', { 'font-size': 10.5, fill: 'var(--ink-2)' }, g);
+      t2.style.fontVariantNumeric = 'tabular-nums';
+      endLabelEls.push({ g: g, dot: dot, t1: t1, t2: t2 });
+    });
+
+    // crosshair
+    el('line', { x1: 0, x2: 0, y1: PAD.top, y2: H - PAD.bottom, stroke: 'var(--axis)', 'stroke-width': 1, 'stroke-dasharray': '3 3', 'class': 'crossline' }, gCross);
+    SERIES.forEach(function (s) {
+      var c = el('circle', { r: 4, fill: 'var(' + s.cssVar + ')', stroke: 'var(--surface)', 'stroke-width': 2 }, gCross);
+      crossDots.push(c);
+    });
+
+    // hover overlay
+    overlay = el('rect', { x: PAD.left, y: PAD.top, width: W - PAD.left - PAD.right, height: H - PAD.top - PAD.bottom, fill: 'transparent' });
+    overlay.style.cursor = 'crosshair';
+    overlay.addEventListener('mousemove', onHover);
+    overlay.addEventListener('mouseleave', hideHover);
+  }
+
+  function render(t) {
+    tCur = t;
+    var stepM = Math.max(1, Math.round(nMonths / 240)); // ~240 pts per line
+    for (var si = 0; si < SERIES.length; si++) {
+      var d = 'M' + xScale(0) + ',' + yScale(0);
+      for (var m = stepM; m <= t; m += stepM) {
+        d += 'L' + xScale(m).toFixed(1) + ',' + yScale(data[si][m]).toFixed(1);
+      }
+      if (t > 0) d += 'L' + xScale(t).toFixed(1) + ',' + yScale(valAt(si, t)).toFixed(1);
+      pathEls[si].setAttribute('d', d);
+    }
+    placeEndLabels(t);
+    scrubber.value = String(Math.round(t));
+    yearReadout.textContent = fmtTime(t);
+    updateTiles(t);
+  }
+
+  function placeEndLabels(t) {
+    var x = xScale(t);
+    var items = SERIES.map(function (s, si) {
+      return { si: si, y: yScale(valAt(si, t)), v: valAt(si, t) };
+    });
+    items.sort(function (a, b) { return a.y - b.y; });
+    // push apart: each label is two text lines (~24px tall)
+    var GAP = 28;
+    for (var i = 1; i < items.length; i++) {
+      if (items[i].y - items[i - 1].y < GAP) items[i].y = items[i - 1].y + GAP;
+    }
+    var maxY = H - PAD.bottom - 6;
+    for (var i = items.length - 1; i >= 0; i--) {
+      if (items[i].y > maxY) items[i].y = maxY;
+      maxY = items[i].y - GAP;
+    }
+    items.forEach(function (it) {
+      var L = endLabelEls[it.si];
+      var s = SERIES[it.si];
+      var trueY = yScale(valAt(it.si, t));
+      L.dot.setAttribute('cx', x); L.dot.setAttribute('cy', trueY);
+      L.t1.setAttribute('x', x + 9); L.t1.setAttribute('y', it.y + 1);
+      L.t2.setAttribute('x', x + 9); L.t2.setAttribute('y', it.y + 13);
+      L.t1.textContent = s.short;
+      L.t2.textContent = fmtYen(it.v);
+    });
+  }
+
+  // ---- tiles ----
+  var tileRefs = [];
+  function buildTiles() {
+    tilesEl.innerHTML = '';
+    tileRefs = [];
+    SERIES.forEach(function (s) {
+      var tile = document.createElement('div');
+      tile.className = 'tile';
+      var name = document.createElement('div');
+      name.className = 't-name';
+      var chip = document.createElement('span');
+      chip.className = 'chip' + (s.dashed ? ' dash' : '');
+      if (!s.dashed) chip.style.background = 'var(' + s.cssVar + ')';
+      name.appendChild(chip);
+      name.appendChild(document.createTextNode(s.name));
+      var val = document.createElement('div');
+      val.className = 't-value';
+      var sub = document.createElement('div');
+      sub.className = 't-sub' + (s.dashed ? '' : ' gain');
+      tile.appendChild(name); tile.appendChild(val); tile.appendChild(sub);
+      tilesEl.appendChild(tile);
+      tileRefs.push({ val: val, sub: sub });
+    });
+  }
+  function updateTiles(t) {
+    var principal = valAt(SERIES.length - 1, t);
+    SERIES.forEach(function (s, si) {
+      var v = valAt(si, t);
+      tileRefs[si].val.textContent = fmtYen(v);
+      if (s.dashed) {
+        tileRefs[si].sub.textContent = '毎月' + fmtMan(amtMan) + '万円 × ' + Math.round(Math.min(t, stopM)) + 'ヶ月';
+      } else {
+        var gain = v - principal;
+        tileRefs[si].sub.textContent = '運用益 +' + fmtYen(Math.max(0, gain));
+      }
+    });
+  }
+
+  // ---- legend ----
+  function buildLegend() {
+    legendEl.innerHTML = '';
+    SERIES.forEach(function (s) {
+      var span = document.createElement('span');
+      var chip = document.createElement('span');
+      chip.className = 'chip' + (s.dashed ? ' dash' : '');
+      if (!s.dashed) chip.style.background = 'var(' + s.cssVar + ')';
+      span.appendChild(chip);
+      span.appendChild(document.createTextNode(s.name));
+      legendEl.appendChild(span);
+    });
+  }
+
+  // ---- table ----
+  function buildTable() {
+    var html = '<thead><tr><th>経過</th>';
+    SERIES.forEach(function (s) { html += '<th>' + s.name + '</th>'; });
+    html += '</tr></thead><tbody>';
+    var stepY = years <= 12 ? 1 : 5;
+    var rows = [];
+    for (var yr = stepY; yr <= years; yr += stepY) rows.push(yr);
+    if (rows[rows.length - 1] !== years) rows.push(years);
+    rows.forEach(function (yr) {
+      html += '<tr><td>' + yr + '年</td>';
+      SERIES.forEach(function (s, si) { html += '<td>' + fmtYen(data[si][yr * 12]) + '</td>'; });
+      html += '</tr>';
+    });
+    html += '</tbody>';
+    tableEl.innerHTML = html;
+  }
+
+  // ---- hover ----
+  function onHover(ev) {
+    if (playing) return;
+    var rect = svg.getBoundingClientRect();
+    var px = (ev.clientX - rect.left) * (W / rect.width);
+    var t = Math.round((px - PAD.left) / (W - PAD.left - PAD.right) * nMonths);
+    t = Math.max(0, Math.min(nMonths, Math.min(t, Math.round(tCur))));
+    var x = xScale(t);
+    gCross.setAttribute('visibility', 'visible');
+    gCross.querySelector('.crossline').setAttribute('x1', x);
+    gCross.querySelector('.crossline').setAttribute('x2', x);
+    var rows = '';
+    SERIES.forEach(function (s, si) {
+      var v = data[si][t];
+      crossDots[si].setAttribute('cx', x);
+      crossDots[si].setAttribute('cy', yScale(v));
+      var chipStyle = s.dashed
+        ? 'background:repeating-linear-gradient(90deg,var(--principal) 0 3px,transparent 3px 5px)'
+        : 'background:var(' + s.cssVar + ')';
+      rows += '<div class="tt-row"><span class="nm"><span class="tt-chip" style="' + chipStyle + '"></span>' + s.short + '</span><span class="vl">' + fmtYen(v) + '</span></div>';
+    });
+    tooltip.innerHTML = '<div class="tt-title">' + fmtTime(t) + '</div>' + rows;
+    tooltip.style.display = 'block';
+    var hRect = holder.getBoundingClientRect();
+    var left = (ev.clientX - hRect.left) + 16;
+    if (left + tooltip.offsetWidth > hRect.width - 8) left = (ev.clientX - hRect.left) - tooltip.offsetWidth - 16;
+    var top = Math.min(Math.max(8, ev.clientY - hRect.top - 40), hRect.height - tooltip.offsetHeight - 8);
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  }
+  function hideHover() {
+    tooltip.style.display = 'none';
+    gCross.setAttribute('visibility', 'hidden');
+  }
+
+  // ---- animation ----
+  function play() {
+    if (playing) { stop(); return; }
+    playing = true;
+    hideHover();
+    playBtn.textContent = '⏸ 一時停止';
+    var duration = Math.max(3500, years / 30 * 9000);
+    var startT = tCur >= nMonths ? 0 : tCur;
+    var t0 = performance.now() - (startT / nMonths) * duration;
+    function frame(now) {
+      var t = Math.min(nMonths, (now - t0) / duration * nMonths);
+      render(t);
+      if (t < nMonths && playing) {
+        rafId = requestAnimationFrame(frame);
+      } else {
+        playing = false;
+        playBtn.textContent = t >= nMonths ? '↻ もう一度' : '▶ 再生';
+      }
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+  function stop() {
+    playing = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    playBtn.textContent = '▶ 再生';
+  }
+
+  // ---- wiring ----
+  playBtn.addEventListener('click', play);
+  scrubber.addEventListener('input', function () {
+    stop();
+    render(Number(scrubber.value));
+    playBtn.textContent = Number(scrubber.value) >= nMonths ? '↻ もう一度' : '▶ 再生';
+  });
+
+  function rebuild() {
+    stop();
+    readInputs();
+    computeSeries();
+    buildChart();
+    buildTable();
+    if (reduceMotion) {
+      render(nMonths);
+      playBtn.textContent = '↻ もう一度';
+    } else {
+      render(0);
+      play();
+    }
+  }
+  [amtIn, contribIn, coastIn].forEach(function (input) {
+    input.addEventListener('change', rebuild);
+    input.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') { input.blur(); }
+    });
+  });
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      buildChart();
+      render(tCur);
+    }, 120);
+  });
+
+  // ---- init ----
+  readInputs();
+  computeSeries();
+  buildLegend();
+  buildTiles();
+  buildChart();
+  buildTable();
+  if (reduceMotion) {
+    render(nMonths);
+    playBtn.textContent = '↻ もう一度';
+  } else {
+    render(0);
+    setTimeout(play, 450);
+  }
+})();
+</script>
+
+</body>
+</html>
