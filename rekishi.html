@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>もしオルカンに積み立てていたら — 実績シミュレーター</title>
+</head>
+<body>
+<style>
+  :root {
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink-1: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-3: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --good: #006300;
+    --bad: #b3261e;
+    --orukan: #1c5cab;
+    --principal: #898781;
+    --tooltip-bg: rgba(252,252,251,0.97);
+    --btn-bg: #0b0b0b;
+    --btn-ink: #fcfcfb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0d0d0d; --surface: #1a1a19; --ink-1: #ffffff; --ink-2: #c3c2b7;
+      --ink-3: #898781; --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --good: #0ca30c; --bad: #e66767;
+      --orukan: #86b6ef; --principal: #898781;
+      --tooltip-bg: rgba(26,26,25,0.97);
+      --btn-bg: #fcfcfb; --btn-ink: #0b0b0b;
+    }
+  }
+  :root[data-theme="light"] {
+    --page: #f9f9f7; --surface: #fcfcfb; --ink-1: #0b0b0b; --ink-2: #52514e;
+    --ink-3: #898781; --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --good: #006300; --bad: #b3261e;
+    --orukan: #1c5cab; --principal: #898781;
+    --tooltip-bg: rgba(252,252,251,0.97);
+    --btn-bg: #0b0b0b; --btn-ink: #fcfcfb;
+  }
+  :root[data-theme="dark"] {
+    --page: #0d0d0d; --surface: #1a1a19; --ink-1: #ffffff; --ink-2: #c3c2b7;
+    --ink-3: #898781; --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --good: #0ca30c; --bad: #e66767;
+    --orukan: #86b6ef; --principal: #898781;
+    --tooltip-bg: rgba(26,26,25,0.97);
+    --btn-bg: #fcfcfb; --btn-ink: #0b0b0b;
+  }
+
+  body {
+    background: var(--page);
+    color: var(--ink-1);
+    font-family: system-ui, -apple-system, "Hiragino Sans", "Segoe UI", "Yu Gothic UI", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 36px 16px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  header h1 {
+    font-size: 1.35rem; font-weight: 700; letter-spacing: 0.01em;
+    text-wrap: balance; margin: 0 0 6px;
+  }
+  header p { margin: 0; color: var(--ink-2); font-size: 0.88rem; max-width: 44em; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+  button.play {
+    appearance: none; border: none;
+    background: var(--btn-bg); color: var(--btn-ink);
+    font: inherit; font-size: 0.9rem; font-weight: 600;
+    padding: 8px 18px; border-radius: 8px; cursor: pointer; min-width: 112px;
+  }
+  button.play:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 2px solid var(--orukan); outline-offset: 2px;
+  }
+  .ctl-group { display: flex; align-items: center; gap: 7px; }
+  .ctl-group label, .ctl-group .unit { font-size: 0.84rem; color: var(--ink-2); white-space: nowrap; }
+  select, input[type=number] {
+    font: inherit; font-size: 0.9rem; color: var(--ink-1);
+    background: var(--surface); border: 1px solid var(--axis);
+    border-radius: 7px; padding: 6px 8px;
+  }
+  input[type=number] { width: 4.2em; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .headline {
+    font-size: 1.02rem; line-height: 1.65;
+  }
+  .headline b.up { color: var(--good); }
+  .headline .big { font-size: 1.3rem; font-weight: 800; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 6px 18px;
+    font-size: 0.8rem; color: var(--ink-2); margin-bottom: 8px;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .chip { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  .chip.dash {
+    background: repeating-linear-gradient(90deg, var(--principal) 0 4px, transparent 4px 7px);
+    height: 2px;
+  }
+
+  .chart-holder { position: relative; }
+  .chart-holder svg { display: block; width: 100%; }
+  .tooltip {
+    position: absolute; pointer-events: none;
+    background: var(--tooltip-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    font-size: 0.78rem; line-height: 1.5;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    min-width: 176px; display: none; z-index: 5;
+  }
+  .tooltip .tt-title { font-weight: 700; margin-bottom: 4px; }
+  .tooltip .tt-row { display: flex; align-items: center; gap: 7px; justify-content: space-between; }
+  .tooltip .tt-row .nm { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+  .tooltip .tt-row .vl { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .tt-chip { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+  }
+  .tile {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .tile .t-name { font-size: 0.74rem; color: var(--ink-2); display: flex; align-items: center; gap: 6px; letter-spacing: 0.02em; }
+  .tile .t-value { font-size: 1.18rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .tile .t-sub { font-size: 0.74rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .tile .t-sub.gain { color: var(--good); }
+  .tile .t-sub.loss { color: var(--bad); }
+
+  details.tablebox { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+  details.tablebox summary { cursor: pointer; padding: 12px 18px; font-size: 0.86rem; font-weight: 600; color: var(--ink-2); }
+  details.tablebox[open] summary { border-bottom: 1px solid var(--border); }
+  .tbl-scroll { overflow-x: auto; padding: 6px 18px 16px; }
+  table.data {
+    border-collapse: collapse; font-size: 0.8rem;
+    font-variant-numeric: tabular-nums; width: 100%; min-width: 420px;
+  }
+  table.data th, table.data td {
+    text-align: right; padding: 5px 10px;
+    border-bottom: 1px solid var(--grid); white-space: nowrap;
+  }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+  table.data thead th { color: var(--ink-2); font-weight: 600; }
+  td.neg { color: var(--bad); }
+
+  .crosslink { font-size: 0.86rem; }
+  .crosslink a { color: var(--orukan); font-weight: 600; }
+
+  footer.note { font-size: 0.75rem; color: var(--ink-3); max-width: 48em; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>もし「オルカン」に積み立てていたら — 実績でふり返る</h1>
+    <p>開始年・終了年・毎月の金額を入れると、全世界株式（オルカン相当・円建て配当込み）の<b>実際の値動き</b>でその期間の資産推移を再現します。保険や貯金に払ってきたのと同じ金額を投資に回していたら──を確かめられます。</p>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctl-group">
+        <label for="startSel">開始</label>
+        <select id="startSel"></select>
+      </div>
+      <div class="ctl-group">
+        <label for="endSel">終了</label>
+        <select id="endSel"></select>
+      </div>
+      <div class="ctl-group">
+        <label for="amtIn">毎月</label>
+        <input type="number" id="amtIn" value="3" min="0.1" max="1000" step="0.5" inputmode="decimal">
+        <span class="unit">万円</span>
+      </div>
+      <button class="play" id="playBtn">▶ 再生</button>
+    </div>
+  </div>
+
+  <div class="panel headline" id="headline"></div>
+
+  <div class="panel">
+    <div class="legend">
+      <span><span class="chip" style="background:var(--orukan)"></span>オルカン（全世界株式・実績）</span>
+      <span><span class="chip dash"></span>元本（払った総額）</span>
+    </div>
+    <div class="chart-holder" id="chartHolder">
+      <svg id="chart" role="img" aria-label="オルカン積立の実績推移グラフ"></svg>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <details class="tablebox">
+    <summary>使用データを見る（各年の円建てリターン）</summary>
+    <div class="tbl-scroll"><table class="data" id="dataTable"></table></div>
+  </details>
+
+  <div class="panel crosslink">
+    ⚙ これからの積立を金利別に試算する → <a href="./index.html">積立シミュレーター（将来版）</a>
+  </div>
+
+  <footer class="note">
+    ※ 年次データの出所：1960〜69年はS&amp;P500（配当込み・当時は1ドル360円の固定相場）、1970〜87年はMSCI世界株指数、1988〜2018年はMSCI全世界株指数（いずれも配当込みを円換算した概算値）、2019年以降はeMAXIS Slim 全世界株式（オール・カントリー）の実際の基準価額（データ基準日：2026年6月末）。オルカンの設定は2018年10月のため、それ以前は連動指数等の実績です。年の途中は各年のリターンを月割りで補間しています。税金・手数料・分配金課税は考慮していません。<b>過去の実績は将来の成果を保証するものではなく、元本割れの期間も存在します。</b>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // 円建て年次リターン(%) 1960〜2025 + 2026は上半期(1〜6月)のみ
+  var RET = {
+    1960: 0.47, 1961: 26.89, 1962: -8.73, 1963: 22.8, 1964: 16.48,
+    1965: 12.45, 1966: -10.06, 1967: 23.98, 1968: 11.06, 1969: -8.5,
+    1970: -2.0, 1971: 4.5, 1972: 18.57, 1973: -20.73, 1974: -18.86,
+    1975: 36.42, 1976: 10.12, 1977: -13.99, 1978: -3.91, 1979: 38.46,
+    1980: 8.15, 1981: 4.75, 1982: 19.09, 1983: 21.68, 1984: 14.64,
+    1985: 13.06, 1986: 13.26, 1987: -10.44, 1988: 26.33, 1989: 34.5,
+    1990: -21.77, 1991: 10.85, 1992: -4.98, 1993: 12.03, 1994: -6.1,
+    1995: 24.42, 1996: 27.21, 1997: 29.61, 1998: 8.15, 1999: 12.76,
+    2000: -3.2, 2001: -3.53, 2002: -26.9, 2003: 21.34, 2004: 12.23,
+    2005: 26.53, 2006: 22.63, 2007: 5.32, 2008: -52.69, 2009: 37.29,
+    2010: -0.25, 2011: -10.8, 2012: 30.37, 2013: 49.8, 2014: 19.09,
+    2015: -1.44, 2016: 5.56, 2017: 20.05, 2018: -11.33, 2019: 26.82,
+    2020: 8.96, 2021: 32.71, 2022: -5.58, 2023: 30.42, 2024: 32.48,
+    2025: 20.51, 2026: 13.94
+  };
+  var FIRST_YEAR = 1960, LAST_YEAR = 2026, LAST_MONTHS = 6; // 2026は6月まで
+
+  var svg = document.getElementById('chart');
+  var holder = document.getElementById('chartHolder');
+  var tooltip = document.getElementById('tooltip');
+  var playBtn = document.getElementById('playBtn');
+  var startSel = document.getElementById('startSel');
+  var endSel = document.getElementById('endSel');
+  var amtIn = document.getElementById('amtIn');
+  var headline = document.getElementById('headline');
+  var tilesEl = document.getElementById('tiles');
+  var tableEl = document.getElementById('dataTable');
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var startYear = 1995, endYear = 2026, monthly = 30000;
+  var months = [];       // 各月のラベル用 {y, m}
+  var balArr = [], prArr = [];  // 月末残高 / 元本 (index 0 = 開始時点0)
+  var nMonths = 0, yMax = 1, tCur = 0;
+  var playing = false, rafId = null;
+
+  // ---- selects ----
+  (function initSelects() {
+    for (var y = FIRST_YEAR; y <= 2025; y++) {
+      var o = document.createElement('option');
+      o.value = y; o.textContent = y + '年1月から';
+      startSel.appendChild(o);
+    }
+    startSel.value = '1995';
+    for (var y2 = FIRST_YEAR; y2 <= 2025; y2++) {
+      var o2 = document.createElement('option');
+      o2.value = y2; o2.textContent = y2 + '年12月まで';
+      endSel.appendChild(o2);
+    }
+    var oLast = document.createElement('option');
+    oLast.value = '2026'; oLast.textContent = '2026年6月まで（最新）';
+    endSel.appendChild(oLast);
+    endSel.value = '2026';
+  })();
+
+  // ---- math ----
+  function computeSeries() {
+    startYear = Number(startSel.value);
+    endYear = Number(endSel.value);
+    if (endYear < startYear) { endYear = startYear; endSel.value = String(endYear); }
+    var amt = parseFloat(amtIn.value);
+    if (!(amt > 0)) { amt = 3; amtIn.value = '3'; }
+    monthly = amt * 10000;
+
+    months = []; balArr = [0]; prArr = [0];
+    var bal = 0, pr = 0;
+    for (var y = startYear; y <= endYear; y++) {
+      var mCount = (y === 2026) ? LAST_MONTHS : 12;
+      // 2026年のリターンは1〜6月の累計値なので、その月数で月割りする
+      var rm = Math.pow(1 + RET[y] / 100, 1 / mCount) - 1;
+      for (var m = 1; m <= mCount; m++) {
+        bal = bal * (1 + rm) + monthly;
+        pr += monthly;
+        months.push({ y: y, m: m });
+        balArr.push(bal);
+        prArr.push(pr);
+      }
+    }
+    nMonths = months.length;
+    yMax = niceCeil(Math.max(bal, pr) * 1.06);
+  }
+
+  function niceCeil(v) {
+    var pow = Math.pow(10, Math.floor(Math.log10(v)));
+    var f = v / pow;
+    var nice = f <= 1 ? 1 : f <= 1.25 ? 1.25 : f <= 1.5 ? 1.5 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 3 ? 3 : f <= 4 ? 4 : f <= 5 ? 5 : f <= 8 ? 8 : 10;
+    return nice * pow;
+  }
+
+  function valAt(arr, t) {
+    var i0 = Math.floor(t), i1 = Math.min(i0 + 1, nMonths);
+    var f = t - i0;
+    return arr[i0] * (1 - f) + arr[i1] * f;
+  }
+
+  // ---- formatting ----
+  function fmtYen(v) {
+    var sign = v < 0 ? '-' : '';
+    v = Math.abs(v);
+    if (v >= 1e8) {
+      var oku = v / 1e8;
+      return sign + (oku >= 10 ? Math.round(oku * 10) / 10 : Math.round(oku * 100) / 100).toLocaleString('ja-JP') + '億円';
+    }
+    if (v >= 1e4) return sign + Math.round(v / 1e4).toLocaleString('ja-JP') + '万円';
+    return sign + Math.round(v).toLocaleString('ja-JP') + '円';
+  }
+  function fmtAxis(v) {
+    if (v === 0) return '0';
+    if (v >= 1e8) return (Math.round(v / 1e8 * 100) / 100).toLocaleString('ja-JP') + '億';
+    return Math.round(v / 1e4).toLocaleString('ja-JP') + '万';
+  }
+  function fmtYM(t) {
+    var i = Math.min(nMonths - 1, Math.max(0, Math.round(t) - 1));
+    if (t <= 0) return startYear + '年1月';
+    var mm = months[i];
+    return mm.y + '年' + mm.m + '月';
+  }
+
+  // ---- chart ----
+  var W = 0, H = 420;
+  var PAD = { top: 18, right: 96, bottom: 34, left: 56 };
+
+  function xScale(t) { return PAD.left + (t / nMonths) * (W - PAD.left - PAD.right); }
+  function yScale(v) { return PAD.top + (1 - v / yMax) * (H - PAD.top - PAD.bottom); }
+
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    (parent || svg).appendChild(e);
+    return e;
+  }
+
+  var gGrid, gLines, gLabels, gCross, overlay;
+  var pathOru, pathPr, labels = [], crossDots = [];
+
+  function buildChart() {
+    svg.innerHTML = '';
+    W = holder.clientWidth || 900;
+    if (W < 560) { PAD.right = 78; PAD.left = 58; H = 360; } else { PAD.right = 96; PAD.left = 62; H = 420; }
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('height', H);
+
+    gGrid = el('g', {});
+    gLines = el('g', {});
+    gLabels = el('g', {});
+    gCross = el('g', { visibility: 'hidden' });
+
+    var steps = 5;
+    for (var i = 0; i <= steps; i++) {
+      var v = yMax * i / steps;
+      var y = yScale(v);
+      el('line', { x1: PAD.left, x2: W - PAD.right, y1: y, y2: y, stroke: i === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, gGrid);
+      var t = el('text', { x: PAD.left - 8, y: y + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--ink-3)' }, gGrid);
+      t.textContent = fmtAxis(v);
+      t.style.fontVariantNumeric = 'tabular-nums';
+    }
+
+    var totalYears = Math.max(1, Math.ceil(nMonths / 12));
+    var stepY = totalYears <= 8 ? 1 : totalYears <= 16 ? 2 : totalYears <= 40 ? 5 : 10;
+    for (var yy = startYear; yy <= endYear; yy += stepY) {
+      var tt = (yy - startYear) * 12;
+      if (tt > nMonths) break;
+      var x = xScale(tt);
+      el('line', { x1: x, x2: x, y1: H - PAD.bottom, y2: H - PAD.bottom + 5, stroke: 'var(--axis)', 'stroke-width': 1 }, gGrid);
+      var tx = el('text', { x: x, y: H - PAD.bottom + 20, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--ink-3)' }, gGrid);
+      tx.textContent = yy;
+    }
+
+    pathPr = el('path', { fill: 'none', stroke: 'var(--principal)', 'stroke-width': 1.6, 'stroke-dasharray': '5 4', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, gLines);
+    pathOru = el('path', { fill: 'none', stroke: 'var(--orukan)', 'stroke-width': 2.2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, gLines);
+
+    labels = [];
+    [{ nm: 'オルカン', cv: 'var(--orukan)' }, { nm: '元本', cv: 'var(--principal)' }].forEach(function (s) {
+      var g = el('g', {}, gLabels);
+      var dot = el('circle', { r: 3.5, fill: s.cv }, g);
+      var t1 = el('text', { 'font-size': 11.5, 'font-weight': 700, fill: 'var(--ink-1)' }, g);
+      var t2 = el('text', { 'font-size': 10.5, fill: 'var(--ink-2)' }, g);
+      t2.style.fontVariantNumeric = 'tabular-nums';
+      labels.push({ dot: dot, t1: t1, t2: t2, nm: s.nm });
+    });
+
+    el('line', { x1: 0, x2: 0, y1: PAD.top, y2: H - PAD.bottom, stroke: 'var(--axis)', 'stroke-width': 1, 'stroke-dasharray': '3 3', class: 'crossline' }, gCross);
+    crossDots = [];
+    ['var(--orukan)', 'var(--principal)'].forEach(function (cv) {
+      crossDots.push(el('circle', { r: 4, fill: cv, stroke: 'var(--surface)', 'stroke-width': 2 }, gCross));
+    });
+
+    overlay = el('rect', { x: PAD.left, y: PAD.top, width: W - PAD.left - PAD.right, height: H - PAD.top - PAD.bottom, fill: 'transparent' });
+    overlay.style.cursor = 'crosshair';
+    overlay.addEventListener('mousemove', onHover);
+    overlay.addEventListener('mouseleave', hideHover);
+  }
+
+  function pathFor(arr, t) {
+    var stepM = Math.max(1, Math.round(nMonths / 300));
+    var d = 'M' + xScale(0).toFixed(1) + ',' + yScale(0).toFixed(1);
+    for (var i = stepM; i <= t; i += stepM) {
+      d += 'L' + xScale(i).toFixed(1) + ',' + yScale(arr[i]).toFixed(1);
+    }
+    if (t > 0) d += 'L' + xScale(t).toFixed(1) + ',' + yScale(valAt(arr, t)).toFixed(1);
+    return d;
+  }
+
+  function render(t) {
+    tCur = t;
+    pathOru.setAttribute('d', pathFor(balArr, t));
+    pathPr.setAttribute('d', pathFor(prArr, t));
+
+    var x = xScale(t);
+    var items = [
+      { i: 0, v: valAt(balArr, t) },
+      { i: 1, v: valAt(prArr, t) }
+    ];
+    items.forEach(function (it) { it.y = yScale(it.v); it.trueY = it.y; });
+    items.sort(function (a, b) { return a.y - b.y; });
+    var GAP = 28;
+    if (items[1].y - items[0].y < GAP) items[1].y = items[0].y + GAP;
+    var maxY = H - PAD.bottom - 6;
+    if (items[1].y > maxY) { items[1].y = maxY; if (items[1].y - items[0].y < GAP) items[0].y = items[1].y - GAP; }
+    items.forEach(function (it) {
+      var L = labels[it.i];
+      L.dot.setAttribute('cx', x); L.dot.setAttribute('cy', it.trueY);
+      L.t1.setAttribute('x', x + 9); L.t1.setAttribute('y', it.y + 1);
+      L.t2.setAttribute('x', x + 9); L.t2.setAttribute('y', it.y + 13);
+      L.t1.textContent = L.nm;
+      L.t2.textContent = fmtYen(it.v);
+    });
+    updateTiles(t);
+  }
+
+  // ---- headline & tiles ----
+  function updateHeadline() {
+    var fin = balArr[nMonths], pr = prArr[nMonths];
+    var diff = fin - pr;
+    var years = nMonths / 12;
+    var mult = fin / pr;
+    var endLabel = (endYear === 2026) ? '2026年6月' : endYear + '年12月';
+    var annualized = Math.pow(fin / pr > 0 ? mult : 1, 1 / years); // 参考値（単純化はしない→表示は倍率のみ）
+    headline.innerHTML =
+      startYear + '年1月から' + endLabel + 'まで、毎月' + (monthly / 1e4).toLocaleString('ja-JP') + '万円（払った総額 <b>' + fmtYen(pr) + '</b>）をオルカンに積み立てていたら──<br>' +
+      '<span class="big">' + fmtYen(fin) + '</span>　' +
+      (diff >= 0
+        ? '<b class="up">＋' + fmtYen(diff) + '（元本の約' + (Math.round(mult * 10) / 10) + '倍）</b>'
+        : '<b style="color:var(--bad)">' + fmtYen(diff) + '（元本割れ）</b>');
+  }
+
+  var tileRefs = [];
+  function buildTiles() {
+    tilesEl.innerHTML = '';
+    tileRefs = [];
+    [
+      { nm: 'オルカン評価額', chip: 'var(--orukan)' },
+      { nm: '元本（払った総額）', chip: null },
+      { nm: '運用益（差額）', chip: null },
+      { nm: '元本に対する倍率', chip: null }
+    ].forEach(function (s) {
+      var tile = document.createElement('div');
+      tile.className = 'tile';
+      var name = document.createElement('div');
+      name.className = 't-name';
+      if (s.chip) {
+        var chip = document.createElement('span');
+        chip.className = 'chip'; chip.style.background = s.chip;
+        name.appendChild(chip);
+      } else if (s.nm.indexOf('元本') === 0) {
+        var chip2 = document.createElement('span');
+        chip2.className = 'chip dash';
+        name.appendChild(chip2);
+      }
+      name.appendChild(document.createTextNode(s.nm));
+      var val = document.createElement('div'); val.className = 't-value';
+      var sub = document.createElement('div'); sub.className = 't-sub';
+      tile.appendChild(name); tile.appendChild(val); tile.appendChild(sub);
+      tilesEl.appendChild(tile);
+      tileRefs.push({ val: val, sub: sub });
+    });
+  }
+  function updateTiles(t) {
+    var v = valAt(balArr, t), pr = valAt(prArr, t);
+    var diff = v - pr;
+    tileRefs[0].val.textContent = fmtYen(v);
+    tileRefs[0].sub.textContent = fmtYM(t) + ' 時点';
+    tileRefs[1].val.textContent = fmtYen(pr);
+    tileRefs[1].sub.textContent = '毎月' + (monthly / 1e4).toLocaleString('ja-JP') + '万円 × ' + Math.round(t) + 'ヶ月';
+    tileRefs[2].val.textContent = (diff >= 0 ? '+' : '') + fmtYen(diff);
+    tileRefs[2].sub.className = 't-sub ' + (diff >= 0 ? 'gain' : 'loss');
+    tileRefs[2].sub.textContent = diff >= 0 ? '投資に回していた場合のプラス分' : '元本割れの状態';
+    tileRefs[3].val.textContent = pr > 0 ? '×' + (Math.round(v / pr * 100) / 100).toLocaleString('ja-JP') : '—';
+    tileRefs[3].sub.textContent = '元本1に対する評価額';
+  }
+
+  // ---- data table ----
+  function buildTable() {
+    var html = '<thead><tr><th>年</th><th>円建てリターン</th><th>年</th><th>円建てリターン</th></tr></thead><tbody>';
+    var ys = [];
+    for (var y = startYear; y <= endYear; y++) ys.push(y);
+    var half = Math.ceil(ys.length / 2);
+    for (var i = 0; i < half; i++) {
+      var y1 = ys[i], y2 = ys[i + half];
+      html += '<tr>';
+      html += '<td>' + y1 + (y1 === 2026 ? '（1〜6月）' : '') + '</td><td class="' + (RET[y1] < 0 ? 'neg' : '') + '">' + (RET[y1] > 0 ? '+' : '') + RET[y1].toFixed(1) + '%</td>';
+      if (y2 !== undefined) {
+        html += '<td>' + y2 + (y2 === 2026 ? '（1〜6月）' : '') + '</td><td class="' + (RET[y2] < 0 ? 'neg' : '') + '">' + (RET[y2] > 0 ? '+' : '') + RET[y2].toFixed(1) + '%</td>';
+      } else {
+        html += '<td></td><td></td>';
+      }
+      html += '</tr>';
+    }
+    html += '</tbody>';
+    tableEl.innerHTML = html;
+  }
+
+  // ---- hover ----
+  function onHover(ev) {
+    if (playing) return;
+    var rect = svg.getBoundingClientRect();
+    var px = (ev.clientX - rect.left) * (W / rect.width);
+    var t = Math.round((px - PAD.left) / (W - PAD.left - PAD.right) * nMonths);
+    t = Math.max(0, Math.min(nMonths, Math.min(t, Math.round(tCur))));
+    var x = xScale(t);
+    gCross.setAttribute('visibility', 'visible');
+    gCross.querySelector('.crossline').setAttribute('x1', x);
+    gCross.querySelector('.crossline').setAttribute('x2', x);
+    var v = balArr[t], pr = prArr[t];
+    crossDots[0].setAttribute('cx', x); crossDots[0].setAttribute('cy', yScale(v));
+    crossDots[1].setAttribute('cx', x); crossDots[1].setAttribute('cy', yScale(pr));
+    tooltip.innerHTML =
+      '<div class="tt-title">' + fmtYM(t) + '</div>' +
+      '<div class="tt-row"><span class="nm"><span class="tt-chip" style="background:var(--orukan)"></span>オルカン</span><span class="vl">' + fmtYen(v) + '</span></div>' +
+      '<div class="tt-row"><span class="nm"><span class="tt-chip" style="background:repeating-linear-gradient(90deg,var(--principal) 0 3px,transparent 3px 5px)"></span>元本</span><span class="vl">' + fmtYen(pr) + '</span></div>' +
+      '<div class="tt-row"><span class="nm">差額</span><span class="vl">' + (v - pr >= 0 ? '+' : '') + fmtYen(v - pr) + '</span></div>';
+    tooltip.style.display = 'block';
+    var hRect = holder.getBoundingClientRect();
+    var left = (ev.clientX - hRect.left) + 16;
+    if (left + tooltip.offsetWidth > hRect.width - 8) left = (ev.clientX - hRect.left) - tooltip.offsetWidth - 16;
+    var top = Math.min(Math.max(8, ev.clientY - hRect.top - 40), hRect.height - tooltip.offsetHeight - 8);
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  }
+  function hideHover() {
+    tooltip.style.display = 'none';
+    gCross.setAttribute('visibility', 'hidden');
+  }
+
+  // ---- animation ----
+  function play() {
+    if (playing) { stopAnim(); return; }
+    playing = true;
+    hideHover();
+    playBtn.textContent = '⏸ 一時停止';
+    var duration = Math.min(12000, Math.max(3500, nMonths / 360 * 8000));
+    var startT = tCur >= nMonths ? 0 : tCur;
+    var t0 = performance.now() - (startT / nMonths) * duration;
+    function frame(now) {
+      var t = Math.min(nMonths, (now - t0) / duration * nMonths);
+      render(t);
+      if (t < nMonths && playing) {
+        rafId = requestAnimationFrame(frame);
+      } else {
+        playing = false;
+        playBtn.textContent = t >= nMonths ? '↻ もう一度' : '▶ 再生';
+      }
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+  function stopAnim() {
+    playing = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    playBtn.textContent = '▶ 再生';
+  }
+
+  // ---- wiring ----
+  function rebuild() {
+    stopAnim();
+    computeSeries();
+    buildChart();
+    buildTable();
+    updateHeadline();
+    if (reduceMotion) {
+      render(nMonths);
+      playBtn.textContent = '↻ もう一度';
+    } else {
+      render(0);
+      play();
+    }
+  }
+  playBtn.addEventListener('click', play);
+  startSel.addEventListener('change', rebuild);
+  endSel.addEventListener('change', rebuild);
+  amtIn.addEventListener('change', rebuild);
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      buildChart();
+      render(tCur);
+    }, 120);
+  });
+
+  buildTiles();
+  rebuild();
+})();
+</script>
+</body>
+</html>
