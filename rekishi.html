@@ -18,7 +18,9 @@
     --border: rgba(11,11,11,0.10);
     --good: #006300;
     --bad: #b3261e;
-    --orukan: #1c5cab;
+    --orukan: #104281;
+    --hengaku: #2a78d6;
+    --chochiku: #86b6ef;
     --principal: #898781;
     --tooltip-bg: rgba(252,252,251,0.97);
     --btn-bg: #0b0b0b;
@@ -29,7 +31,7 @@
       --page: #0d0d0d; --surface: #1a1a19; --ink-1: #ffffff; --ink-2: #c3c2b7;
       --ink-3: #898781; --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
       --good: #0ca30c; --bad: #e66767;
-      --orukan: #86b6ef; --principal: #898781;
+      --orukan: #b7d3f6; --hengaku: #5598e7; --chochiku: #184f95; --principal: #898781;
       --tooltip-bg: rgba(26,26,25,0.97);
       --btn-bg: #fcfcfb; --btn-ink: #0b0b0b;
     }
@@ -38,7 +40,7 @@
     --page: #f9f9f7; --surface: #fcfcfb; --ink-1: #0b0b0b; --ink-2: #52514e;
     --ink-3: #898781; --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
     --good: #006300; --bad: #b3261e;
-    --orukan: #1c5cab; --principal: #898781;
+    --orukan: #104281; --hengaku: #2a78d6; --chochiku: #86b6ef; --principal: #898781;
     --tooltip-bg: rgba(252,252,251,0.97);
     --btn-bg: #0b0b0b; --btn-ink: #fcfcfb;
   }
@@ -46,7 +48,7 @@
     --page: #0d0d0d; --surface: #1a1a19; --ink-1: #ffffff; --ink-2: #c3c2b7;
     --ink-3: #898781; --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
     --good: #0ca30c; --bad: #e66767;
-    --orukan: #86b6ef; --principal: #898781;
+    --orukan: #b7d3f6; --hengaku: #5598e7; --chochiku: #184f95; --principal: #898781;
     --tooltip-bg: rgba(26,26,25,0.97);
     --btn-bg: #fcfcfb; --btn-ink: #0b0b0b;
   }
@@ -88,7 +90,7 @@
     padding: 8px 18px; border-radius: 8px; cursor: pointer; min-width: 112px;
   }
   button.play:focus-visible, select:focus-visible, input:focus-visible {
-    outline: 2px solid var(--orukan); outline-offset: 2px;
+    outline: 2px solid var(--hengaku); outline-offset: 2px;
   }
   .ctl-group { display: flex; align-items: center; gap: 7px; }
   .ctl-group label, .ctl-group .unit { font-size: 0.84rem; color: var(--ink-2); white-space: nowrap; }
@@ -99,9 +101,7 @@
   }
   input[type=number] { width: 4.2em; text-align: right; font-variant-numeric: tabular-nums; }
 
-  .headline {
-    font-size: 1.02rem; line-height: 1.65;
-  }
+  .headline { font-size: 1.02rem; line-height: 1.65; }
   .headline b.up { color: var(--good); }
   .headline .big { font-size: 1.3rem; font-weight: 800; }
 
@@ -124,7 +124,7 @@
     border-radius: 8px; padding: 10px 12px;
     font-size: 0.78rem; line-height: 1.5;
     box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    min-width: 176px; display: none; z-index: 5;
+    min-width: 190px; display: none; z-index: 5;
   }
   .tooltip .tt-title { font-weight: 700; margin-bottom: 4px; }
   .tooltip .tt-row { display: flex; align-items: center; gap: 7px; justify-content: space-between; }
@@ -165,7 +165,7 @@
   td.neg { color: var(--bad); }
 
   .crosslink { font-size: 0.86rem; }
-  .crosslink a { color: var(--orukan); font-weight: 600; }
+  .crosslink a { color: var(--hengaku); font-weight: 600; }
 
   footer.note { font-size: 0.75rem; color: var(--ink-3); max-width: 48em; }
 </style>
@@ -173,7 +173,7 @@
 <div class="wrap">
   <header>
     <h1>もし「オルカン」に積み立てていたら — 実績でふり返る</h1>
-    <p>開始年・終了年・毎月の金額を入れると、全世界株式（オルカン相当・円建て配当込み）の<b>実際の値動き</b>でその期間の資産推移を再現します。保険や貯金に払ってきたのと同じ金額を投資に回していたら──を確かめられます。</p>
+    <p>開始年・終了年・毎月の金額を入れると、全世界株式（オルカン相当・円建て配当込み）の<b>実際の値動き</b>でその期間の資産推移を再現します。同じ金額を貯蓄型保険や変額保険（いずれも一般的な水準の例）に払っていた場合と比べられます。</p>
   </header>
 
   <div class="panel">
@@ -200,10 +200,12 @@
   <div class="panel">
     <div class="legend">
       <span><span class="chip" style="background:var(--orukan)"></span>オルカン（全世界株式・実績）</span>
+      <span><span class="chip" style="background:var(--hengaku)"></span>変額保険の例（同じ運用 − 年2.5%コスト）</span>
+      <span><span class="chip" style="background:var(--chochiku)"></span>貯蓄型保険の例（実質 年0.5%）</span>
       <span><span class="chip dash"></span>元本（払った総額）</span>
     </div>
     <div class="chart-holder" id="chartHolder">
-      <svg id="chart" role="img" aria-label="オルカン積立の実績推移グラフ"></svg>
+      <svg id="chart" role="img" aria-label="オルカンと保険商品の実績比較グラフ"></svg>
       <div class="tooltip" id="tooltip"></div>
     </div>
   </div>
@@ -220,7 +222,8 @@
   </div>
 
   <footer class="note">
-    ※ 年次データの出所：1960〜69年はS&amp;P500（配当込み・当時は1ドル360円の固定相場）、1970〜87年はMSCI世界株指数、1988〜2018年はMSCI全世界株指数（いずれも配当込みを円換算した概算値）、2019年以降はeMAXIS Slim 全世界株式（オール・カントリー）の実際の基準価額（データ基準日：2026年6月末）。オルカンの設定は2018年10月のため、それ以前は連動指数等の実績です。年の途中は各年のリターンを月割りで補間しています。税金・手数料・分配金課税は考慮していません。<b>過去の実績は将来の成果を保証するものではなく、元本割れの期間も存在します。</b>
+    ※ オルカンの年次データの出所：1960〜69年はS&amp;P500（配当込み・当時は1ドル360円の固定相場）、1970〜87年はMSCI世界株指数、1988〜2018年はMSCI全世界株指数（いずれも配当込みを円換算した概算値）、2019年以降はeMAXIS Slim 全世界株式（オール・カントリー）の実際の基準価額（データ基準日：2026年6月末）。オルカンの設定は2018年10月のため、それ以前は連動指数等の実績です。<br>
+    ※ 保険の線は一般的な水準を単純化した<b>推定モデル</b>です。「変額保険の例」はオルカンと同じ運用から保険関係費・運用費 年2.5%を控除、「貯蓄型保険の例」は満期まで続けた場合の実質利回り年0.5%で計算しています。実際の商品は契約内容・年齢・性別により異なり、<b>貯蓄型・変額とも途中解約は解約控除によりこの線を大きく下回ります</b>（特に10年以内）。保険には保障や税控除という投資にない価値があります。年の途中は各年のリターンを月割りで補間。税金・手数料（オルカンの信託報酬年0.06%含む）は考慮していません。<b>過去の実績は将来の成果を保証するものではなく、元本割れの期間も存在します。</b>
   </footer>
 </div>
 
@@ -245,7 +248,17 @@
     2020: 8.96, 2021: 32.71, 2022: -5.58, 2023: 30.42, 2024: 32.48,
     2025: 20.51, 2026: 13.94
   };
-  var FIRST_YEAR = 1960, LAST_YEAR = 2026, LAST_MONTHS = 6; // 2026は6月まで
+  var FIRST_YEAR = 1960, LAST_MONTHS = 6; // 2026は6月まで
+  var HENGAKU_COST = 0.025;   // 変額保険の年間コスト
+  var CHOCHIKU_RATE = 0.005;  // 貯蓄型保険の実質年利
+
+  // series: 0=オルカン, 1=変額, 2=貯蓄型, 3=元本
+  var SERIES = [
+    { nm: 'オルカン', full: 'オルカン（実績）', cv: 'var(--orukan)', w: 2.2 },
+    { nm: '変額保険の例', full: '変額保険の例', cv: 'var(--hengaku)', w: 1.9 },
+    { nm: '貯蓄型保険の例', full: '貯蓄型保険の例', cv: 'var(--chochiku)', w: 1.9 },
+    { nm: '元本', full: '元本（払った総額）', cv: 'var(--principal)', w: 1.6, dashed: true }
+  ];
 
   var svg = document.getElementById('chart');
   var holder = document.getElementById('chartHolder');
@@ -262,12 +275,11 @@
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var startYear = 1995, endYear = 2026, monthly = 30000;
-  var months = [];       // 各月のラベル用 {y, m}
-  var balArr = [], prArr = [];  // 月末残高 / 元本 (index 0 = 開始時点0)
+  var months = [];
+  var data = [];        // data[si][t] 月末値, index 0 = 0円
   var nMonths = 0, yMax = 1, tCur = 0;
   var playing = false, rafId = null;
 
-  // ---- selects ----
   (function initSelects() {
     for (var y = FIRST_YEAR; y <= 2025; y++) {
       var o = document.createElement('option');
@@ -286,7 +298,6 @@
     endSel.value = '2026';
   })();
 
-  // ---- math ----
   function computeSeries() {
     startYear = Number(startSel.value);
     endYear = Number(endSel.value);
@@ -295,22 +306,27 @@
     if (!(amt > 0)) { amt = 3; amtIn.value = '3'; }
     monthly = amt * 10000;
 
-    months = []; balArr = [0]; prArr = [0];
-    var bal = 0, pr = 0;
+    months = [];
+    data = [[0], [0], [0], [0]];
+    var bal = [0, 0, 0, 0];
     for (var y = startYear; y <= endYear; y++) {
       var mCount = (y === 2026) ? LAST_MONTHS : 12;
-      // 2026年のリターンは1〜6月の累計値なので、その月数で月割りする
-      var rm = Math.pow(1 + RET[y] / 100, 1 / mCount) - 1;
+      var frac = mCount / 12;
+      // 各系列の「その年の月次利率」— 2026年のRETは上半期累計なので月数で割る
+      var rOru = Math.pow(1 + RET[y] / 100, 1 / mCount) - 1;
+      var rHen = Math.pow((1 + RET[y] / 100) * Math.pow(1 - HENGAKU_COST, frac), 1 / mCount) - 1;
+      var rCho = Math.pow(Math.pow(1 + CHOCHIKU_RATE, frac), 1 / mCount) - 1;
       for (var m = 1; m <= mCount; m++) {
-        bal = bal * (1 + rm) + monthly;
-        pr += monthly;
+        bal[0] = bal[0] * (1 + rOru) + monthly;
+        bal[1] = bal[1] * (1 + rHen) + monthly;
+        bal[2] = bal[2] * (1 + rCho) + monthly;
+        bal[3] = bal[3] + monthly;
         months.push({ y: y, m: m });
-        balArr.push(bal);
-        prArr.push(pr);
+        for (var si = 0; si < 4; si++) data[si].push(bal[si]);
       }
     }
     nMonths = months.length;
-    yMax = niceCeil(Math.max(bal, pr) * 1.06);
+    yMax = niceCeil(Math.max(bal[0], bal[3]) * 1.06);
   }
 
   function niceCeil(v) {
@@ -320,13 +336,13 @@
     return nice * pow;
   }
 
-  function valAt(arr, t) {
+  function valAt(si, t) {
+    var arr = data[si];
     var i0 = Math.floor(t), i1 = Math.min(i0 + 1, nMonths);
     var f = t - i0;
     return arr[i0] * (1 - f) + arr[i1] * f;
   }
 
-  // ---- formatting ----
   function fmtYen(v) {
     var sign = v < 0 ? '-' : '';
     v = Math.abs(v);
@@ -349,9 +365,8 @@
     return mm.y + '年' + mm.m + '月';
   }
 
-  // ---- chart ----
-  var W = 0, H = 420;
-  var PAD = { top: 18, right: 96, bottom: 34, left: 56 };
+  var W = 0, H = 440;
+  var PAD = { top: 18, right: 118, bottom: 34, left: 62 };
 
   function xScale(t) { return PAD.left + (t / nMonths) * (W - PAD.left - PAD.right); }
   function yScale(v) { return PAD.top + (1 - v / yMax) * (H - PAD.top - PAD.bottom); }
@@ -364,12 +379,12 @@
   }
 
   var gGrid, gLines, gLabels, gCross, overlay;
-  var pathOru, pathPr, labels = [], crossDots = [];
+  var pathEls = [], labelEls = [], crossDots = [];
 
   function buildChart() {
     svg.innerHTML = '';
     W = holder.clientWidth || 900;
-    if (W < 560) { PAD.right = 78; PAD.left = 58; H = 360; } else { PAD.right = 96; PAD.left = 62; H = 420; }
+    if (W < 560) { PAD.right = 100; PAD.left = 58; H = 380; } else { PAD.right = 118; PAD.left = 62; H = 440; }
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     svg.setAttribute('height', H);
 
@@ -399,23 +414,29 @@
       tx.textContent = yy;
     }
 
-    pathPr = el('path', { fill: 'none', stroke: 'var(--principal)', 'stroke-width': 1.6, 'stroke-dasharray': '5 4', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, gLines);
-    pathOru = el('path', { fill: 'none', stroke: 'var(--orukan)', 'stroke-width': 2.2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, gLines);
-
-    labels = [];
-    [{ nm: 'オルカン', cv: 'var(--orukan)' }, { nm: '元本', cv: 'var(--principal)' }].forEach(function (s) {
+    pathEls = []; labelEls = []; crossDots = [];
+    // 描画順: 元本(奥)→貯蓄型→変額→オルカン(手前)
+    [3, 2, 1, 0].forEach(function (si) {
+      var s = SERIES[si];
+      var p = el('path', {
+        fill: 'none', stroke: s.cv, 'stroke-width': s.w,
+        'stroke-linejoin': 'round', 'stroke-linecap': 'round'
+      }, gLines);
+      if (s.dashed) p.setAttribute('stroke-dasharray', '5 4');
+      pathEls[si] = p;
+    });
+    SERIES.forEach(function (s, si) {
       var g = el('g', {}, gLabels);
       var dot = el('circle', { r: 3.5, fill: s.cv }, g);
       var t1 = el('text', { 'font-size': 11.5, 'font-weight': 700, fill: 'var(--ink-1)' }, g);
       var t2 = el('text', { 'font-size': 10.5, fill: 'var(--ink-2)' }, g);
       t2.style.fontVariantNumeric = 'tabular-nums';
-      labels.push({ dot: dot, t1: t1, t2: t2, nm: s.nm });
+      labelEls[si] = { dot: dot, t1: t1, t2: t2 };
     });
 
     el('line', { x1: 0, x2: 0, y1: PAD.top, y2: H - PAD.bottom, stroke: 'var(--axis)', 'stroke-width': 1, 'stroke-dasharray': '3 3', class: 'crossline' }, gCross);
-    crossDots = [];
-    ['var(--orukan)', 'var(--principal)'].forEach(function (cv) {
-      crossDots.push(el('circle', { r: 4, fill: cv, stroke: 'var(--surface)', 'stroke-width': 2 }, gCross));
+    SERIES.forEach(function (s, si) {
+      crossDots[si] = el('circle', { r: 4, fill: s.cv, stroke: 'var(--surface)', 'stroke-width': 2 }, gCross);
     });
 
     overlay = el('rect', { x: PAD.left, y: PAD.top, width: W - PAD.left - PAD.right, height: H - PAD.top - PAD.bottom, fill: 'transparent' });
@@ -424,83 +445,75 @@
     overlay.addEventListener('mouseleave', hideHover);
   }
 
-  function pathFor(arr, t) {
+  function pathFor(si, t) {
+    var arr = data[si];
     var stepM = Math.max(1, Math.round(nMonths / 300));
     var d = 'M' + xScale(0).toFixed(1) + ',' + yScale(0).toFixed(1);
     for (var i = stepM; i <= t; i += stepM) {
       d += 'L' + xScale(i).toFixed(1) + ',' + yScale(arr[i]).toFixed(1);
     }
-    if (t > 0) d += 'L' + xScale(t).toFixed(1) + ',' + yScale(valAt(arr, t)).toFixed(1);
+    if (t > 0) d += 'L' + xScale(t).toFixed(1) + ',' + yScale(valAt(si, t)).toFixed(1);
     return d;
   }
 
   function render(t) {
     tCur = t;
-    pathOru.setAttribute('d', pathFor(balArr, t));
-    pathPr.setAttribute('d', pathFor(prArr, t));
+    for (var si = 0; si < 4; si++) pathEls[si].setAttribute('d', pathFor(si, t));
 
     var x = xScale(t);
-    var items = [
-      { i: 0, v: valAt(balArr, t) },
-      { i: 1, v: valAt(prArr, t) }
-    ];
-    items.forEach(function (it) { it.y = yScale(it.v); it.trueY = it.y; });
+    var items = SERIES.map(function (s, si) {
+      var v = valAt(si, t);
+      return { si: si, v: v, y: yScale(v), trueY: yScale(v) };
+    });
     items.sort(function (a, b) { return a.y - b.y; });
     var GAP = 28;
-    if (items[1].y - items[0].y < GAP) items[1].y = items[0].y + GAP;
+    for (var i = 1; i < items.length; i++) {
+      if (items[i].y - items[i - 1].y < GAP) items[i].y = items[i - 1].y + GAP;
+    }
     var maxY = H - PAD.bottom - 6;
-    if (items[1].y > maxY) { items[1].y = maxY; if (items[1].y - items[0].y < GAP) items[0].y = items[1].y - GAP; }
+    for (var j = items.length - 1; j >= 0; j--) {
+      if (items[j].y > maxY) items[j].y = maxY;
+      maxY = items[j].y - GAP;
+    }
     items.forEach(function (it) {
-      var L = labels[it.i];
+      var L = labelEls[it.si];
       L.dot.setAttribute('cx', x); L.dot.setAttribute('cy', it.trueY);
       L.t1.setAttribute('x', x + 9); L.t1.setAttribute('y', it.y + 1);
       L.t2.setAttribute('x', x + 9); L.t2.setAttribute('y', it.y + 13);
-      L.t1.textContent = L.nm;
+      L.t1.textContent = SERIES[it.si].nm;
       L.t2.textContent = fmtYen(it.v);
     });
     updateTiles(t);
   }
 
-  // ---- headline & tiles ----
   function updateHeadline() {
-    var fin = balArr[nMonths], pr = prArr[nMonths];
+    var fin = data[0][nMonths], hen = data[1][nMonths], cho = data[2][nMonths], pr = data[3][nMonths];
     var diff = fin - pr;
-    var years = nMonths / 12;
     var mult = fin / pr;
     var endLabel = (endYear === 2026) ? '2026年6月' : endYear + '年12月';
-    var annualized = Math.pow(fin / pr > 0 ? mult : 1, 1 / years); // 参考値（単純化はしない→表示は倍率のみ）
     headline.innerHTML =
       startYear + '年1月から' + endLabel + 'まで、毎月' + (monthly / 1e4).toLocaleString('ja-JP') + '万円（払った総額 <b>' + fmtYen(pr) + '</b>）をオルカンに積み立てていたら──<br>' +
       '<span class="big">' + fmtYen(fin) + '</span>　' +
       (diff >= 0
         ? '<b class="up">＋' + fmtYen(diff) + '（元本の約' + (Math.round(mult * 10) / 10) + '倍）</b>'
-        : '<b style="color:var(--bad)">' + fmtYen(diff) + '（元本割れ）</b>');
+        : '<b style="color:var(--bad)">' + fmtYen(diff) + '（元本割れ）</b>') +
+      '<br><span style="font-size:0.85rem;color:var(--ink-2);">同じお金が、変額保険の例では ' + fmtYen(hen) + '、貯蓄型保険の例では ' + fmtYen(cho) + '。</span>';
   }
 
   var tileRefs = [];
   function buildTiles() {
     tilesEl.innerHTML = '';
     tileRefs = [];
-    [
-      { nm: 'オルカン評価額', chip: 'var(--orukan)' },
-      { nm: '元本（払った総額）', chip: null },
-      { nm: '運用益（差額）', chip: null },
-      { nm: '元本に対する倍率', chip: null }
-    ].forEach(function (s) {
+    SERIES.forEach(function (s, si) {
       var tile = document.createElement('div');
       tile.className = 'tile';
       var name = document.createElement('div');
       name.className = 't-name';
-      if (s.chip) {
-        var chip = document.createElement('span');
-        chip.className = 'chip'; chip.style.background = s.chip;
-        name.appendChild(chip);
-      } else if (s.nm.indexOf('元本') === 0) {
-        var chip2 = document.createElement('span');
-        chip2.className = 'chip dash';
-        name.appendChild(chip2);
-      }
-      name.appendChild(document.createTextNode(s.nm));
+      var chip = document.createElement('span');
+      chip.className = 'chip' + (s.dashed ? ' dash' : '');
+      if (!s.dashed) chip.style.background = s.cv;
+      name.appendChild(chip);
+      name.appendChild(document.createTextNode(s.full));
       var val = document.createElement('div'); val.className = 't-value';
       var sub = document.createElement('div'); sub.className = 't-sub';
       tile.appendChild(name); tile.appendChild(val); tile.appendChild(sub);
@@ -509,20 +522,21 @@
     });
   }
   function updateTiles(t) {
-    var v = valAt(balArr, t), pr = valAt(prArr, t);
-    var diff = v - pr;
-    tileRefs[0].val.textContent = fmtYen(v);
-    tileRefs[0].sub.textContent = fmtYM(t) + ' 時点';
-    tileRefs[1].val.textContent = fmtYen(pr);
-    tileRefs[1].sub.textContent = '毎月' + (monthly / 1e4).toLocaleString('ja-JP') + '万円 × ' + Math.round(t) + 'ヶ月';
-    tileRefs[2].val.textContent = (diff >= 0 ? '+' : '') + fmtYen(diff);
-    tileRefs[2].sub.className = 't-sub ' + (diff >= 0 ? 'gain' : 'loss');
-    tileRefs[2].sub.textContent = diff >= 0 ? '投資に回していた場合のプラス分' : '元本割れの状態';
-    tileRefs[3].val.textContent = pr > 0 ? '×' + (Math.round(v / pr * 100) / 100).toLocaleString('ja-JP') : '—';
-    tileRefs[3].sub.textContent = '元本1に対する評価額';
+    var pr = valAt(3, t);
+    for (var si = 0; si < 4; si++) {
+      var v = valAt(si, t);
+      tileRefs[si].val.textContent = fmtYen(v);
+      if (si === 3) {
+        tileRefs[si].sub.className = 't-sub';
+        tileRefs[si].sub.textContent = '毎月' + (monthly / 1e4).toLocaleString('ja-JP') + '万円 × ' + Math.round(t) + 'ヶ月';
+      } else {
+        var diff = v - pr;
+        tileRefs[si].sub.className = 't-sub ' + (diff >= 0 ? 'gain' : 'loss');
+        tileRefs[si].sub.textContent = (diff >= 0 ? '元本＋' : '元本') + fmtYen(diff);
+      }
+    }
   }
 
-  // ---- data table ----
   function buildTable() {
     var html = '<thead><tr><th>年</th><th>円建てリターン</th><th>年</th><th>円建てリターン</th></tr></thead><tbody>';
     var ys = [];
@@ -543,7 +557,6 @@
     tableEl.innerHTML = html;
   }
 
-  // ---- hover ----
   function onHover(ev) {
     if (playing) return;
     var rect = svg.getBoundingClientRect();
@@ -554,14 +567,17 @@
     gCross.setAttribute('visibility', 'visible');
     gCross.querySelector('.crossline').setAttribute('x1', x);
     gCross.querySelector('.crossline').setAttribute('x2', x);
-    var v = balArr[t], pr = prArr[t];
-    crossDots[0].setAttribute('cx', x); crossDots[0].setAttribute('cy', yScale(v));
-    crossDots[1].setAttribute('cx', x); crossDots[1].setAttribute('cy', yScale(pr));
-    tooltip.innerHTML =
-      '<div class="tt-title">' + fmtYM(t) + '</div>' +
-      '<div class="tt-row"><span class="nm"><span class="tt-chip" style="background:var(--orukan)"></span>オルカン</span><span class="vl">' + fmtYen(v) + '</span></div>' +
-      '<div class="tt-row"><span class="nm"><span class="tt-chip" style="background:repeating-linear-gradient(90deg,var(--principal) 0 3px,transparent 3px 5px)"></span>元本</span><span class="vl">' + fmtYen(pr) + '</span></div>' +
-      '<div class="tt-row"><span class="nm">差額</span><span class="vl">' + (v - pr >= 0 ? '+' : '') + fmtYen(v - pr) + '</span></div>';
+    var rows = '';
+    SERIES.forEach(function (s, si) {
+      var v = data[si][t];
+      crossDots[si].setAttribute('cx', x);
+      crossDots[si].setAttribute('cy', yScale(v));
+      var chipStyle = s.dashed
+        ? 'background:repeating-linear-gradient(90deg,var(--principal) 0 3px,transparent 3px 5px)'
+        : 'background:' + s.cv;
+      rows += '<div class="tt-row"><span class="nm"><span class="tt-chip" style="' + chipStyle + '"></span>' + s.nm + '</span><span class="vl">' + fmtYen(v) + '</span></div>';
+    });
+    tooltip.innerHTML = '<div class="tt-title">' + fmtYM(t) + '</div>' + rows;
     tooltip.style.display = 'block';
     var hRect = holder.getBoundingClientRect();
     var left = (ev.clientX - hRect.left) + 16;
@@ -575,7 +591,6 @@
     gCross.setAttribute('visibility', 'hidden');
   }
 
-  // ---- animation ----
   function play() {
     if (playing) { stopAnim(); return; }
     playing = true;
@@ -602,7 +617,6 @@
     playBtn.textContent = '▶ 再生';
   }
 
-  // ---- wiring ----
   function rebuild() {
     stopAnim();
     computeSeries();
