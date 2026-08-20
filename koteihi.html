@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>固定費 かんたん診断</title>
+<style>
+  :root {
+    --teal: #17575A;
+    --teal-light: #F1F7F5;
+    --teal-lighter: #F7FAF9;
+    --gray-bg: #EEF1F0;
+    --orange: #E8710A;
+    --yellow: #FFC85C;
+    --ink: #22333B;
+    --ink-2: #3D4F4C;
+    --ink-3: #5B7470;
+    --ink-4: #8CA09B;
+    --good: #178A5A;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: #fbfbf9;
+    color: var(--ink);
+    margin: 0;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  header { background: var(--teal); color: #fff; border-radius: 16px; padding: 28px 24px; margin-bottom: 20px; }
+  header .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: var(--yellow); margin-bottom: 6px; }
+  header h1 { font-size: 24px; margin: 0 0 10px; font-weight: 800; }
+  header p { font-size: 14px; margin: 0; color: #E3F0ED; line-height: 1.7; }
+
+  .card { background: #fff; border: 1px solid #e6e6e2; border-radius: 14px; padding: 20px 20px 22px; margin-bottom: 16px; }
+  .card h2 { font-size: 16px; font-weight: 800; color: var(--teal); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--teal); color: #fff; font-size: 13px; flex: none; }
+  .card .desc { font-size: 13px; color: var(--ink-3); margin: 0 0 16px; }
+
+  .goal-input { display: flex; align-items: baseline; gap: 10px; background: var(--teal-lighter); border-radius: 10px; padding: 14px 16px; }
+  .goal-input input { border: none; background: transparent; font-size: 28px; font-weight: 800; color: var(--orange); width: 8em; text-align: right; font-variant-numeric: tabular-nums; }
+  .goal-input input:focus { outline: none; }
+  .goal-input .unit { font-size: 15px; color: var(--ink-2); font-weight: 700; }
+
+  .item { padding: 14px 0; border-top: 1px solid #eee; }
+  .item:first-child { border-top: none; }
+  .item .row1 { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .item .label { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .item .now { font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .item .now small { font-size: 12px; font-weight: 600; color: var(--ink-3); }
+  input[type=range] { width: 100%; accent-color: var(--teal); height: 22px; }
+  .item .bench { font-size: 11.5px; color: var(--ink-4); margin-top: 4px; }
+  .item .flag { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
+  .flag.over { background: #FCEEE3; color: var(--orange); }
+  .flag.ok { background: #E7F4EC; color: var(--good); }
+  .item .save { font-size: 13px; margin-top: 8px; color: var(--ink-2); }
+  .item .save b { color: var(--orange); font-size: 15px; }
+
+  .total-card { background: var(--teal); border-radius: 14px; padding: 22px 24px; color: #fff; margin-bottom: 16px; text-align: center; }
+  .total-card .label { font-size: 13px; color: #A8D8CE; font-weight: 700; letter-spacing: 0.06em; }
+  .total-card .num { font-size: 40px; font-weight: 800; margin: 6px 0 2px; }
+  .total-card .num .yen { font-size: 20px; margin-left: 4px; }
+  .total-card .sub { font-size: 12.5px; color: #E3F0ED; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tabs button { flex: 1; min-width: 64px; border: 1.5px solid var(--teal); background: #fff; color: var(--teal); font-weight: 700; font-size: 14px; padding: 9px 0; border-radius: 9px; cursor: pointer; font-family: inherit; }
+  .tabs button.sel { background: var(--teal); color: #fff; }
+
+  .compare { display: flex; gap: 12px; margin-bottom: 14px; }
+  .compare .box { flex: 1; border-radius: 12px; padding: 16px 14px; }
+  .compare .box.bank { background: var(--gray-bg); }
+  .compare .box.invest { background: var(--teal-light); border: 1.5px solid var(--teal); }
+  .compare .box .t { font-size: 12px; font-weight: 700; color: var(--ink-3); margin-bottom: 6px; }
+  .compare .box.invest .t { color: var(--teal); }
+  .compare .box .v { font-size: 22px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .compare .box.invest .v { color: var(--orange); }
+  .compare .box .v small { font-size: 12px; font-weight: 600; }
+
+  .bars { display: flex; align-items: flex-end; gap: 14px; height: 140px; margin: 18px 0 6px; padding: 0 4px; }
+  .bars .barcol { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .bars .bar { width: 60%; border-radius: 6px 6px 0 0; transition: height 400ms ease; }
+  .bars .bar.bank { background: var(--ink-4); }
+  .bars .bar.invest { background: var(--orange); }
+  .bars .bl { font-size: 11px; color: var(--ink-3); margin-top: 6px; font-weight: 700; }
+
+  .goal-progress { background: var(--teal-lighter); border-radius: 12px; padding: 16px; margin-top: 14px; }
+  .goal-progress .gp-head { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-2); margin-bottom: 8px; font-weight: 700; }
+  .gp-bar-outer { background: #dfe8e6; border-radius: 20px; height: 16px; overflow: hidden; }
+  .gp-bar-inner { background: var(--orange); height: 100%; border-radius: 20px; transition: width 400ms ease; }
+  .goal-progress .msg { font-size: 13.5px; color: var(--ink); margin-top: 10px; line-height: 1.6; }
+  .goal-progress .msg b { color: var(--teal); }
+
+  footer { text-align: center; font-size: 11px; color: var(--ink-4); margin-top: 24px; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">固定費 かんたん診断</div>
+    <h1>払っていることを忘れているお金、ありませんか？</h1>
+    <p>4つだけ質問します。今の金額をスライダーで合わせるだけで、見直しの余地と「その分を運用したらどうなるか」が一目でわかります。難しい知識は不要です。</p>
+  </header>
+
+  <div class="card">
+    <h2><span class="num">1</span>今回のリフォーム費用の目安</h2>
+    <p class="desc">おおよその金額で大丈夫です。あとで、固定費の見直し効果と比べます。</p>
+    <div class="goal-input">
+      <input type="number" id="goalAmt" value="150" inputmode="numeric">
+      <span class="unit">万円</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span>今の固定費を教えてください</h2>
+    <p class="desc">スライダーを、今実際に払っている金額に合わせてください。</p>
+
+    <div class="item" data-key="hoken">
+      <div class="row1">
+        <span class="label">保険料（生命保険・医療保険の合計／月）</span>
+        <span class="now"></span>
+      </div>
+      <input type="range" min="0" max="80000" step="1000" value="45000">
+      <div class="bench">見直し後の目安：月3,000円（必要な保障だけを掛け捨てで確保した場合）<span class="flag"></span></div>
+      <div class="save"></div>
+    </div>
+
+    <div class="item" data-key="tsushin">
+      <div class="row1">
+        <span class="label">通信費（携帯代／夫婦・世帯合計・月）</span>
+        <span class="now"></span>
+      </div>
+      <input type="range" min="0" max="30000" step="500" value="14000">
+      <div class="bench">見直し後の目安：月2,780円（格安SIM・夫婦2回線）<span class="flag"></span></div>
+      <div class="save"></div>
+    </div>
+
+    <div class="item" data-key="tv">
+      <div class="row1">
+        <span class="label">テレビ・ネット回線（月）</span>
+        <span class="now"></span>
+      </div>
+      <input type="range" min="0" max="15000" step="500" value="8500">
+      <div class="bench">見直し後の目安：月5,000円（ケーブルTV解約→アンテナ＋光単体）<span class="flag"></span></div>
+      <div class="save"></div>
+    </div>
+
+    <div class="item" data-key="sub">
+      <div class="row1">
+        <span class="label">サブスク合計（動画・音楽・アプリなど／月）</span>
+        <span class="now"></span>
+      </div>
+      <input type="range" min="0" max="15000" step="500" value="5000">
+      <div class="bench">見直し後の目安：月2,000円（使っていないものを解約）<span class="flag"></span></div>
+      <div class="save"></div>
+    </div>
+  </div>
+
+  <div class="total-card">
+    <div class="label">見直しできそうな金額（月）</div>
+    <div class="num"><span id="totalMonthly">0</span><span class="yen">円</span></div>
+    <div class="sub">年間では <span id="totalYearly">0</span>円の差になります</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span>この差額を何もせず貯金 vs 運用したら？</h2>
+    <p class="desc">見直しできた金額を、そのまま毎月積み立てた場合の比較です。期間を選んでください。</p>
+
+    <div class="tabs" id="yearTabs">
+      <button data-y="5">5年</button>
+      <button data-y="10" class="sel">10年</button>
+      <button data-y="20">20年</button>
+      <button data-y="30">30年</button>
+    </div>
+
+    <div class="bars">
+      <div class="barcol"><div class="bar bank" id="barBank"></div><div class="bl">貯金<br>(年0.3%)</div></div>
+      <div class="barcol"><div class="bar invest" id="barInvest"></div><div class="bl">コツコツ投資<br>(想定 年5%)</div></div>
+    </div>
+
+    <div class="compare">
+      <div class="box bank">
+        <div class="t">そのまま貯金した場合</div>
+        <div class="v" id="bankVal">0<small>万円</small></div>
+      </div>
+      <div class="box invest">
+        <div class="t">コツコツ投資した場合</div>
+        <div class="v" id="investVal">0<small>万円</small></div>
+      </div>
+    </div>
+
+    <div class="goal-progress">
+      <div class="gp-head">
+        <span>リフォーム費用 <span id="goalLabel">150</span>万円に対して…</span>
+        <span id="gpPercent">0%</span>
+      </div>
+      <div class="gp-bar-outer"><div class="gp-bar-inner" id="gpBar" style="width:0%"></div></div>
+      <div class="msg" id="gpMsg"></div>
+    </div>
+  </div>
+
+  <div class="card" style="font-size:13px;">
+    📈 見直しできた差額を、実際の値動きでもっと詳しく試算する → <a href="./index.html" style="color:var(--teal);font-weight:700;">積立シミュレーター（将来版）</a> ／ <a href="./rekishi.html" style="color:var(--teal);font-weight:700;">実績でふり返る版</a>
+  </div>
+
+  <footer>
+    ※ 保険・通信費・テレビ回線の見直し後目安は一般的な例です。実際の削減額は加入内容やご利用状況により異なります。<br>
+    ※ 運用シミュレーションは想定年率での試算であり、将来の運用成果を保証するものではありません。元本割れの可能性があります。<br>
+    担当：福島
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var benchmarks = { hoken: 3000, tsushin: 2780, tv: 5000, sub: 2000 };
+  var items = document.querySelectorAll('.item');
+  var selectedYears = 10;
+
+  function fmt(n) { return Math.round(n).toLocaleString('ja-JP'); }
+
+  function updateItems() {
+    var totalSave = 0;
+    items.forEach(function (el) {
+      var key = el.getAttribute('data-key');
+      var input = el.querySelector('input[type=range]');
+      var val = parseInt(input.value, 10);
+      var bench = benchmarks[key];
+      var save = Math.max(0, val - bench);
+      totalSave += save;
+
+      el.querySelector('.now').textContent = fmt(val) + '円';
+      var flag = el.querySelector('.flag');
+      if (save > 0) {
+        flag.textContent = '見直しの余地あり';
+        flag.className = 'flag over';
+      } else {
+        flag.textContent = '良好です';
+        flag.className = 'flag ok';
+      }
+      var saveEl = el.querySelector('.save');
+      saveEl.innerHTML = save > 0
+        ? '見直せば月 <b>▲' + fmt(save) + '円</b> の余地があります'
+        : 'すでに目安以下です。見直しの必要はなさそうです。';
+    });
+
+    document.getElementById('totalMonthly').textContent = fmt(totalSave);
+    document.getElementById('totalYearly').textContent = fmt(totalSave * 12);
+
+    updateSimulation(totalSave);
+  }
+
+  function futureValueMonthly(monthly, annualRate, years) {
+    var months = years * 12;
+    var mr = Math.pow(1 + annualRate, 1/12) - 1;
+    var fv = 0;
+    for (var i = 0; i < months; i++) {
+      fv += monthly;
+      fv *= (1 + mr);
+    }
+    return fv;
+  }
+
+  function updateSimulation(monthlySave) {
+    var bank = futureValueMonthly(monthlySave, 0.003, selectedYears);
+    var invest = futureValueMonthly(monthlySave, 0.05, selectedYears);
+    var goalMan = parseFloat(document.getElementById('goalAmt').value) || 0;
+    var goalYen = goalMan * 10000;
+
+    document.getElementById('bankVal').innerHTML = fmt(bank/10000) + '<small>万円</small>';
+    document.getElementById('investVal').innerHTML = fmt(invest/10000) + '<small>万円</small>';
+
+    var maxV = Math.max(bank, invest, 1);
+    document.getElementById('barBank').style.height = Math.max(4, (bank/maxV)*100) + '%';
+    document.getElementById('barInvest').style.height = Math.max(4, (invest/maxV)*100) + '%';
+
+    document.getElementById('goalLabel').textContent = fmt(goalMan);
+    var pct = goalYen > 0 ? Math.min(999, Math.round((invest / goalYen) * 100)) : 0;
+    document.getElementById('gpPercent').textContent = pct + '%';
+    document.getElementById('gpBar').style.width = Math.min(100, pct) + '%';
+
+    var msgEl = document.getElementById('gpMsg');
+    if (goalYen <= 0) {
+      msgEl.innerHTML = 'リフォーム費用の目安を入力してください。';
+    } else if (invest >= goalYen) {
+      msgEl.innerHTML = '固定費の見直し分を' + selectedYears + '年運用するだけで、リフォーム費用<b>' + fmt(goalMan) + '万円</b>に届く計算です。';
+    } else {
+      var remain = goalYen - invest;
+      msgEl.innerHTML = 'あと<b>' + fmt(remain/10000) + '万円</b>で目標に届きます。期間を延ばすか、見直し額を増やすと近づきます。';
+    }
+  }
+
+  items.forEach(function (el) {
+    el.querySelector('input[type=range]').addEventListener('input', updateItems);
+  });
+  document.getElementById('goalAmt').addEventListener('input', updateItems);
+
+  var tabBtns = document.querySelectorAll('#yearTabs button');
+  tabBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      tabBtns.forEach(function (b) { b.classList.remove('sel'); });
+      btn.classList.add('sel');
+      selectedYears = parseInt(btn.getAttribute('data-y'), 10);
+      updateItems();
+    });
+  });
+
+  updateItems();
+})();
+</script>
+</body>
+</html>
