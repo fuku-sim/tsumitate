@@ -233,7 +233,7 @@
     });
   }
   $('addEv').addEventListener('click',function(){
-    var a=Math.max(+$('age').value||65,65);
+    var a=Math.max(parseInt($('penAge').value,10)||65,60);
     EV.push({n:"新しい項目",a:a,b:a,y:100}); renderEv(); calc();
   });
 
