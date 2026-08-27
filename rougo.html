@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>老後資金 かんたん試算</title>
+</head>
+<body>
+<style>
+  :root {
+    --page:#f9f9f7; --surface:#fcfcfb; --ink-1:#0b0b0b; --ink-2:#52514e; --ink-3:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --teal:#17575A; --teal-soft:#F1F7F5; --orange:#E8710A; --orange-soft:#FFF3E2;
+    --good:#178A5A; --bad:#b3261e; --gray-bg:#EEF1F0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page:#0d0d0d; --surface:#1a1a19; --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-3:#8f8d87;
+      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.12);
+      --teal:#7FC0BE; --teal-soft:#16302f; --orange:#F0913F; --orange-soft:#3a2a17;
+      --good:#4FC08A; --bad:#e66767; --gray-bg:#242423;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page:#0d0d0d; --surface:#1a1a19; --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-3:#8f8d87;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.12);
+    --teal:#7FC0BE; --teal-soft:#16302f; --orange:#F0913F; --orange-soft:#3a2a17;
+    --good:#4FC08A; --bad:#e66767; --gray-bg:#242423;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink-1);line-height:1.6;
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:22px 15px 70px}
+
+  header{background:var(--teal);color:#fff;border-radius:15px;padding:24px 22px;margin-bottom:16px}
+  header .kicker{font-size:11.5px;font-weight:700;letter-spacing:.13em;opacity:.85;margin-bottom:6px}
+  header h1{font-size:22px;margin:0 0 9px;font-weight:800;line-height:1.35}
+  header p{margin:0;font-size:13.5px;opacity:.92;line-height:1.7}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:17px 17px 19px;margin-bottom:14px}
+  .card h2{font-size:15px;font-weight:800;color:var(--teal);margin:0 0 3px;display:flex;align-items:center;gap:8px}
+  .card h2 .n{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
+    border-radius:50%;background:var(--teal);color:var(--surface);font-size:12.5px;flex:none;font-weight:700}
+  .card .desc{font-size:12.5px;color:var(--ink-3);margin:0 0 14px}
+
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--grid)}
+  .row:first-of-type{border-top:none}
+  .row label{font-size:13.5px;font-weight:600;flex:1}
+  .row label small{display:block;font-weight:400;font-size:11.5px;color:var(--ink-3);margin-top:1px}
+  .ipt{display:flex;align-items:baseline;gap:5px;flex:none}
+  .ipt input{width:5.2em;text-align:right;font:inherit;font-size:17px;font-weight:800;color:var(--orange);
+    background:var(--gray-bg);border:1px solid transparent;border-radius:8px;padding:5px 8px;
+    font-variant-numeric:tabular-nums}
+  .ipt input:focus{outline:none;border-color:var(--teal);background:var(--surface)}
+  .ipt .u{font-size:12.5px;color:var(--ink-2);font-weight:600;white-space:nowrap}
+
+  table.ev{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+  table.ev th{font-size:11px;color:var(--ink-3);font-weight:600;text-align:left;padding:0 5px 6px;white-space:nowrap}
+  table.ev td{padding:3px 5px;border-top:1px solid var(--grid)}
+  table.ev input{width:100%;font:inherit;font-size:13px;background:var(--gray-bg);border:1px solid transparent;
+    border-radius:6px;padding:5px 7px;color:var(--ink-1);font-variant-numeric:tabular-nums}
+  table.ev input:focus{outline:none;border-color:var(--teal);background:var(--surface)}
+  table.ev input.num{text-align:right}
+  table.ev td.del{width:26px}
+  .xbtn{border:none;background:transparent;color:var(--ink-3);font-size:17px;cursor:pointer;padding:2px 4px;line-height:1}
+  .xbtn:hover{color:var(--bad)}
+  .addbtn{margin-top:9px;border:1.5px dashed var(--axis);background:transparent;color:var(--teal);
+    font:inherit;font-size:13px;font-weight:700;padding:8px 0;border-radius:9px;cursor:pointer;width:100%}
+  .addbtn:hover{border-color:var(--teal);background:var(--teal-soft)}
+
+  .hero{background:var(--teal);border-radius:15px;padding:22px 20px;color:#fff;text-align:center;margin-bottom:14px}
+  .hero .lab{font-size:12.5px;opacity:.85;font-weight:700;letter-spacing:.05em}
+  .hero .big{font-size:40px;font-weight:800;margin:5px 0 2px;line-height:1.1;font-variant-numeric:tabular-nums}
+  .hero .big .u{font-size:20px;margin-left:3px}
+  .hero .sub{font-size:12.5px;opacity:.9;margin-top:6px;line-height:1.6}
+
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:14px}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+  .tile .t{font-size:11.5px;color:var(--ink-3);font-weight:600}
+  .tile .v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:1px}
+  .tile .s{font-size:11.5px;color:var(--ink-3);margin-top:1px}
+  .tile .v.ok{color:var(--good)} .tile .v.ng{color:var(--bad)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:5px 15px;font-size:11.5px;color:var(--ink-2);margin-bottom:9px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .chip{width:13px;height:10px;border-radius:2px;display:inline-block}
+  .chip.line{height:3px;background:var(--orange)}
+  svg{display:block;width:100%}
+
+  details{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:14px}
+  details summary{cursor:pointer;padding:12px 16px;font-size:13.5px;font-weight:700;color:var(--ink-2)}
+  details[open] summary{border-bottom:1px solid var(--border)}
+  .tbl{overflow-x:auto;padding:4px 16px 14px}
+  table.yr{border-collapse:collapse;font-size:12.5px;width:100%;min-width:400px;font-variant-numeric:tabular-nums}
+  table.yr th,table.yr td{text-align:right;padding:5px 9px;border-bottom:1px solid var(--grid);white-space:nowrap}
+  table.yr th:first-child,table.yr td:first-child{text-align:left}
+  table.yr thead th{color:var(--ink-3);font-weight:600}
+  table.yr td.neg{color:var(--bad);font-weight:700}
+
+  .xlink{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 16px;font-size:13px;margin-bottom:14px}
+  .xlink a{color:var(--teal);font-weight:700}
+  footer{font-size:11px;color:var(--ink-3);line-height:1.8;margin-top:18px}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="kicker">老後資金 かんたん試算</div>
+  <h1>老後、いくら必要になりますか？</h1>
+  <p>年金と生活費を入れるだけで、必要な金額と資産の減り方が一目でわかります。何歳まで見込むかも自由に変えられ、旅行やリフォームなど「やりたいこと」の費用も足して試せます。</p>
+</header>
+
+<div class="card">
+  <h2><span class="n">1</span>基本の条件</h2>
+  <p class="desc">今の金額で入力してください。物価上昇は自動で反映されます。</p>
+  <div class="row"><label>今の年齢</label>
+    <div class="ipt"><input type="number" id="age" value="65" min="30" max="109" step="1" inputmode="numeric"><span class="u">歳</span></div></div>
+  <div class="row"><label>何歳まで見込むか<small>長めに設定すると安全側の試算になります</small></label>
+    <div class="ipt"><input type="number" id="endAge" value="95" min="31" max="110" step="1" inputmode="numeric"><span class="u">歳まで</span></div></div>
+  <div class="row"><label>年金<small>夫婦合計の手取り月額</small></label>
+    <div class="ipt"><input type="number" id="pen" value="20" min="0" step="0.5" inputmode="decimal"><span class="u">万円/月</span></div></div>
+  <div class="row"><label>生活費<small>住居費・光熱費・食費など毎月の支出</small></label>
+    <div class="ipt"><input type="number" id="exp" value="25" min="0" step="0.5" inputmode="decimal"><span class="u">万円/月</span></div></div>
+  <div class="row"><label>今ある資産<small>預貯金・退職金・投資などの合計</small></label>
+    <div class="ipt"><input type="number" id="asset" value="2000" min="0" step="50" inputmode="numeric"><span class="u">万円</span></div></div>
+</div>
+
+<div class="card">
+  <h2><span class="n">2</span>やりたいこと・大きな出費</h2>
+  <p class="desc">旅行や車の買い替えなど。1回だけなら開始と終了に同じ年齢を入れてください。</p>
+  <table class="ev">
+    <thead><tr><th>項目</th><th style="width:62px">開始</th><th style="width:62px">終了</th><th style="width:86px">金額/年</th><th></th></tr></thead>
+    <tbody id="evBody"></tbody>
+  </table>
+  <button class="addbtn" id="addEv">＋ 項目を追加</button>
+</div>
+
+<div class="card">
+  <h2><span class="n">3</span>前提（変更できます）</h2>
+  <p class="desc">わからなければそのままで大丈夫です。</p>
+  <div class="row"><label>物価上昇率<small>モノの値段が毎年上がる割合</small></label>
+    <div class="ipt"><input type="number" id="infl" value="2" min="0" max="10" step="0.1" inputmode="decimal"><span class="u">%/年</span></div></div>
+  <div class="row"><label>年金の増える率<small>通常は物価上昇より低めになります</small></label>
+    <div class="ipt"><input type="number" id="prise" value="1" min="0" max="10" step="0.1" inputmode="decimal"><span class="u">%/年</span></div></div>
+  <div class="row"><label>資産の運用利回り<small>預貯金のままなら0%</small></label>
+    <div class="ipt"><input type="number" id="ret" value="0" min="0" max="15" step="0.1" inputmode="decimal"><span class="u">%/年</span></div></div>
+</div>
+
+<div class="hero">
+  <div class="lab" id="heroLab">95歳までに、年金以外で必要なお金</div>
+  <div class="big"><span id="needAmt">0</span><span class="u">万円</span></div>
+  <div class="sub" id="needSub"></div>
+</div>
+
+<div class="tiles" id="tiles"></div>
+
+<div class="card">
+  <div class="legend">
+    <span><span class="chip" style="background:var(--teal)"></span>資産の残高</span>
+    <span><span class="chip line"></span>資産ゼロのライン</span>
+  </div>
+  <svg id="chart" role="img" aria-label="資産残高の推移グラフ"></svg>
+</div>
+
+<details>
+  <summary>年ごとの内訳を見る</summary>
+  <div class="tbl"><table class="yr" id="yrTbl"></table></div>
+</details>
+
+<div class="xlink">
+  📈 資産をどう増やすか試算する →
+  <a href="./index.html">積立シミュレーター</a> ／
+  <a href="./koteihi.html">固定費かんたん診断</a>
+</div>
+
+<footer>
+  ※ 本ツールは一般的な条件による概算のシミュレーションです。実際の年金額・税金・社会保険料・医療介護費の自己負担などは個々の状況により異なります。<br>
+  ※ 生活費・大きな出費は物価上昇率に応じて毎年増える前提、年金は「年金の増える率」で増える前提で計算しています。<br>
+  ※ 運用利回りを設定した場合も、値動きのブレは考慮していません。投資には元本割れの可能性があります。<br>
+  担当：福島
+</footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var EV=[
+    {n:"旅行・趣味",     a:65, b:79, y:50},
+    {n:"車の買い替え",   a:70, b:70, y:250},
+    {n:"住宅のリフォーム",a:75, b:75, y:300},
+    {n:"介護の備え",     a:85, b:85, y:500}
+  ];
+  var $=function(id){return document.getElementById(id)};
+  var fmt=function(n){return Math.round(n).toLocaleString('ja-JP')};
+
+  function renderEv(){
+    var tb=$('evBody'); tb.innerHTML='';
+    EV.forEach(function(e,i){
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td><input data-i="'+i+'" data-k="n" value="'+e.n.replace(/"/g,'&quot;')+'"></td>'+
+        '<td><input class="num" data-i="'+i+'" data-k="a" type="number" value="'+e.a+'" inputmode="numeric"></td>'+
+        '<td><input class="num" data-i="'+i+'" data-k="b" type="number" value="'+e.b+'" inputmode="numeric"></td>'+
+        '<td><input class="num" data-i="'+i+'" data-k="y" type="number" value="'+e.y+'" inputmode="numeric"></td>'+
+        '<td class="del"><button class="xbtn" data-del="'+i+'" aria-label="削除">×</button></td>';
+      tb.appendChild(tr);
+    });
+    tb.querySelectorAll('input').forEach(function(el){
+      el.addEventListener('input',function(){
+        var i=+el.dataset.i,k=el.dataset.k;
+        EV[i][k]= k==='n' ? el.value : (parseFloat(el.value)||0);
+        calc();
+      });
+    });
+    tb.querySelectorAll('[data-del]').forEach(function(b){
+      b.addEventListener('click',function(){EV.splice(+b.dataset.del,1);renderEv();calc();});
+    });
+  }
+  $('addEv').addEventListener('click',function(){
+    var a=Math.max(+$('age').value||65,65);
+    EV.push({n:"新しい項目",a:a,b:a,y:100}); renderEv(); calc();
+  });
+
+  function calc(){
+    var age0=Math.min(109,Math.max(30,parseInt($('age').value,10)||65));
+    var END=Math.min(110,Math.max(age0+1,parseInt($('endAge').value,10)||95));
+    var pen=(parseFloat($('pen').value)||0)*12;
+    var exp=(parseFloat($('exp').value)||0)*12;
+    var asset=(parseFloat($('asset').value)||0);
+    var infl=(parseFloat($('infl').value)||0)/100;
+    var prise=(parseFloat($('prise').value)||0)/100;
+    var ret=(parseFloat($('ret').value)||0)/100;
+
+    var rows=[],bal=asset,need=0,dep=null,evTotal=0;
+    for(var i=0,age=age0; age<=END; i++,age++){
+      var f=Math.pow(1+infl,i), pf=Math.pow(1+prise,i);
+      var inc=pen*pf;
+      var ev=0;
+      EV.forEach(function(e){ if(age>=e.a&&age<=e.b) ev+=e.y; });
+      evTotal+=ev*f;
+      var out=exp*f+ev*f;
+      var gap=out-inc;
+      if(gap>0) need+=gap;
+      bal=(bal>0?bal*(1+ret):bal)+inc-out;   // 残高がマイナスの間は運用益を付けない
+      if(bal<0&&dep===null) dep=age;
+      rows.push({age:age,inc:inc,out:out,gap:gap,bal:bal});
+    }
+
+    $('needAmt').textContent=fmt(need);
+    var yrs=END-age0+1;
+    $('heroLab').textContent=END+'歳までに、年金以外で必要なお金';
+    $('needSub').innerHTML=age0+'歳から'+END+'歳までの'+yrs+'年間で、生活費と大きな出費の合計から年金を差し引いた金額です';
+
+    var shortfall=need-asset;
+    $('tiles').innerHTML=
+      tile('今ある資産',fmt(asset)+'万円','')+
+      tile(shortfall>0?'足りない金額':'余る金額',fmt(Math.abs(shortfall))+'万円',
+           shortfall>0?'この分を準備できると安心です':'今の資産で足ります',shortfall>0?'ng':'ok')+
+      tile('資産がなくなる年齢',dep?dep+'歳':'なし',dep?'':END+'歳まで持ちます',dep?'ng':'ok')+
+      tile('大きな出費の合計',fmt(evTotal)+'万円','物価上昇を反映した金額');
+
+    draw(rows);
+    var step=yrs>25?5:(yrs>12?2:1);
+    var h='<thead><tr><th>年齢</th><th>年金収入</th><th>支出</th><th>差引</th><th>資産残高</th></tr></thead><tbody>';
+    rows.forEach(function(r,i){
+      if(i%step===0||i===rows.length-1)
+        h+='<tr><td>'+r.age+'歳</td><td>'+fmt(r.inc)+'</td><td>'+fmt(r.out)+'</td>'+
+           '<td>'+(r.gap>0?'−':'+')+fmt(Math.abs(r.gap))+'</td>'+
+           '<td class="'+(r.bal<0?'neg':'')+'">'+fmt(r.bal)+'</td></tr>';
+    });
+    $('yrTbl').innerHTML=h+'</tbody>';
+  }
+  function tile(t,v,s,cls){
+    return '<div class="tile"><div class="t">'+t+'</div><div class="v '+(cls||'')+'">'+v+'</div>'+
+      (s?'<div class="s">'+s+'</div>':'')+'</div>';
+  }
+
+  function draw(rows){
+    var W=740,H=300,ML=58,MR=12,MT=28,MB=28;
+    var pw=W-ML-MR,ph=H-MT-MB;
+    var bals=rows.map(function(r){return r.bal});
+    var mx=Math.max.apply(null,bals.concat([0])), mn=Math.min.apply(null,bals.concat([0]));
+    var pad=(mx-mn)*0.08||100; mx+=pad; mn-=pad;
+    var n=rows.length;
+    var X=function(i){return ML+(n<2?pw/2:(i/(n-1))*pw)};
+    var Y=function(v){return MT+ph-((v-mn)/(mx-mn))*ph};
+    var p=[];
+    for(var t=0;t<=4;t++){
+      var v=mn+(mx-mn)*t/4, y=Y(v);
+      p.push('<line x1="'+ML+'" y1="'+y.toFixed(1)+'" x2="'+(W-MR)+'" y2="'+y.toFixed(1)+'" stroke="var(--grid)"/>');
+      p.push('<text x="'+(ML-7)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" font-size="10.5" fill="var(--ink-3)">'+fmt(v/1)+'</text>');
+    }
+    var d='M'+X(0)+','+Y(rows[0].bal);
+    rows.forEach(function(r,i){ if(i) d+='L'+X(i).toFixed(1)+','+Y(r.bal).toFixed(1); });
+    var area=d+'L'+X(n-1).toFixed(1)+','+Y(Math.max(mn,0)).toFixed(1)+'L'+X(0).toFixed(1)+','+Y(Math.max(mn,0)).toFixed(1)+'Z';
+    p.push('<path d="'+area+'" fill="var(--teal)" opacity="0.16"/>');
+    p.push('<path d="'+d+'" fill="none" stroke="var(--teal)" stroke-width="2.4"/>');
+    var y0=Y(0);
+    p.push('<line x1="'+ML+'" y1="'+y0.toFixed(1)+'" x2="'+(W-MR)+'" y2="'+y0.toFixed(1)+'" stroke="var(--orange)" stroke-width="1.8" stroke-dasharray="5 4"/>');
+    var st=n>25?10:(n>12?5:2);
+    rows.forEach(function(r,i){
+      if(i%st===0||i===n-1)
+        p.push('<text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10.5" fill="var(--ink-3)">'+r.age+'</text>');
+    });
+    p.push('<text x="'+(ML-7)+'" y="'+(MT-11)+'" text-anchor="end" font-size="9.5" fill="var(--ink-3)">万円</text>');
+    var c=document.getElementById('chart');
+    c.setAttribute('viewBox','0 0 '+W+' '+H); c.innerHTML=p.join('');
+  }
+
+  ['age','endAge','pen','exp','asset','infl','prise','ret'].forEach(function(id){
+    $(id).addEventListener('input',calc);
+  });
+  renderEv(); calc();
+})();
+</script>
+</body>
+</html>
