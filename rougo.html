@@ -145,8 +145,6 @@
     <div class="ipt"><input type="number" id="prise" value="1" min="0" max="10" step="0.1" inputmode="decimal"><span class="u">%/年</span></div></div>
   <div class="row"><label>資産の運用利回り<small>預貯金のままなら0%</small></label>
     <div class="ipt"><input type="number" id="ret" value="0" min="0" max="15" step="0.1" inputmode="decimal"><span class="u">%/年</span></div></div>
-  <div class="row"><label>年金の下限をみる<small>国の財政検証では、年金は現役世代の手取りの50%を下回らない前提。下げ止まる水準を指定します</small></label>
-    <div class="ipt"><input type="number" id="floor" value="82" min="0" max="100" step="1" inputmode="numeric"><span class="u">%まで</span></div></div>
 </div>
 
 <div class="hero">
@@ -179,7 +177,6 @@
 <footer>
   ※ 本ツールは一般的な条件による概算のシミュレーションです。実際の年金額・税金・社会保険料・医療介護費の自己負担などは個々の状況により異なります。<br>
   ※ 生活費・大きな出費は物価上昇率に応じて毎年増える前提、年金は「年金の増える率」で増える前提で計算しています。<br>
-  ※ 「年金の下限をみる」は、令和6年財政検証（過去30年投影ケース）で所得代替率が61.2%→50.4%で下げ止まるとされることを踏まえた設定です（50.4÷61.2≒82%）。この水準に達した後は物価に連動して増える前提に切り替わります。0%にすると下限なしの試算になります。<br>
   ※ 運用利回りを設定した場合も、値動きのブレは考慮していません。投資には元本割れの可能性があります。<br>
   担当：福島
 </footer>
@@ -233,13 +230,11 @@
     var infl=(parseFloat($('infl').value)||0)/100;
     var prise=(parseFloat($('prise').value)||0)/100;
     var ret=(parseFloat($('ret').value)||0)/100;
-    var floor=Math.min(1,Math.max(0,(parseFloat($('floor').value)||0)/100));
 
     var rows=[],bal=asset,need=0,dep=null,evTotal=0;
     for(var i=0,age=age0; age<=END; i++,age++){
       var f=Math.pow(1+infl,i), pf=Math.pow(1+prise,i);
-      // 年金は改定率で伸びるが、実質価値が下限(所得代替率50%ルール)を割ったら物価連動に切替
-      var inc=Math.max(pen*pf, pen*floor*f);
+      var inc=pen*pf;
       var ev=0;
       EV.forEach(function(e){ if(age>=e.a&&age<=e.b) ev+=e.y; });
       evTotal+=ev*f;
@@ -312,7 +307,7 @@
     c.setAttribute('viewBox','0 0 '+W+' '+H); c.innerHTML=p.join('');
   }
 
-  ['age','endAge','pen','exp','asset','infl','prise','ret','floor'].forEach(function(id){
+  ['age','endAge','pen','exp','asset','infl','prise','ret'].forEach(function(id){
     $(id).addEventListener('input',calc);
   });
   renderEv(); calc();
