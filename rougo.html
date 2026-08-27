@@ -127,15 +127,15 @@
 <div class="card">
   <h2><span class="n">1</span>基本の条件</h2>
   <p class="desc">今の金額で入力してください。物価上昇は自動で反映されます。</p>
-  <div class="row"><label>今の年齢</label>
-    <div class="ipt"><input type="number" id="age" value="65" min="30" max="109" step="1" inputmode="numeric"><span class="u">歳</span></div></div>
+  <div class="row"><label>年金をもらい始める年齢<small id="penNote">65歳から受け取る前提です。ここが老後生活のスタートになります</small></label>
+    <div class="ipt"><input type="number" id="penAge" value="65" min="60" max="75" step="1" inputmode="numeric"><span class="u">歳から</span></div></div>
   <div class="row"><label>何歳まで見込むか<small>長めに設定すると安全側の試算になります</small></label>
-    <div class="ipt"><input type="number" id="endAge" value="95" min="31" max="110" step="1" inputmode="numeric"><span class="u">歳まで</span></div></div>
-  <div class="row"><label>年金<small>夫婦合計の手取り月額</small></label>
+    <div class="ipt"><input type="number" id="endAge" value="95" min="61" max="110" step="1" inputmode="numeric"><span class="u">歳まで</span></div></div>
+  <div class="row"><label>年金<small>夫婦合計の手取り月額（65歳から受け取る場合の額）</small></label>
     <div class="ipt"><input type="number" id="pen" value="20" min="0" step="0.5" inputmode="decimal"><span class="u">万円/月</span></div></div>
   <div class="row"><label>生活費<small>住居費・光熱費・食費など毎月の支出</small></label>
     <div class="ipt"><input type="number" id="exp" value="25" min="0" step="0.5" inputmode="decimal"><span class="u">万円/月</span></div></div>
-  <div class="row"><label>今ある資産<small>預貯金・退職金・投資などの合計</small></label>
+  <div class="row"><label>そのとき持っている資産<small>預貯金・退職金・投資などの合計（退職金を受け取る予定ならそれも含める）</small></label>
     <div class="ipt"><input type="number" id="asset" value="2000" min="0" step="50" inputmode="numeric"><span class="u">万円</span></div></div>
 </div>
 
@@ -192,6 +192,7 @@
 <footer>
   ※ 本ツールは一般的な条件による概算のシミュレーションです。実際の年金額・税金・社会保険料・医療介護費の自己負担などは個々の状況により異なります。<br>
   ※ 生活費・大きな出費は物価上昇率に応じて毎年増える前提、年金は「年金の増える率」で増える前提で計算しています。<br>
+  ※ 受け取り開始を65歳より早めると1か月あたり0.4%減額、遅らせると1か月あたり0.7%増額される前提で自動計算しています（60歳で−24%、70歳で+42%、75歳で+84%）。減額・増額は一生涯続きます。<br>
   ※ 運用利回りを設定した場合も、値動きのブレは考慮していません。投資には元本割れの可能性があります。<br>
   担当：福島
 </footer>
@@ -237,7 +238,8 @@
   });
 
   function calc(){
-    var age0=Math.min(109,Math.max(30,parseInt($('age').value,10)||65));
+    var penAge=Math.min(75,Math.max(60,parseInt($('penAge').value,10)||65));
+    var age0=penAge;
     var END=Math.min(110,Math.max(age0+1,parseInt($('endAge').value,10)||95));
     var pen=(parseFloat($('pen').value)||0)*12;
     var exp=(parseFloat($('exp').value)||0)*12;
@@ -245,11 +247,19 @@
     var infl=(parseFloat($('infl').value)||0)/100;
     var prise=(parseFloat($('prise').value)||0)/100;
     var ret=(parseFloat($('ret').value)||0)/100;
+    // 繰上げ −0.4%/月（最大−24%）／繰下げ +0.7%/月（最大+84%）
+    var adj=penAge<65 ? 1-0.004*(65-penAge)*12 : 1+0.007*(penAge-65)*12;
+    var pm=(parseFloat($('pen').value)||0)*adj, pct=Math.round((adj-1)*100);
+    $('penNote').textContent = penAge===65
+      ? '65歳から受け取る前提です'
+      : (penAge<65
+         ? penAge+'歳から受け取ると減額され 月'+pm.toFixed(1)+'万円（'+pct+'%）'
+         : penAge+'歳まで待つと増額され 月'+pm.toFixed(1)+'万円（+'+pct+'%）');
 
     var rows=[],bal=asset,need=0,dep=null,evTotal=0;
     for(var i=0,age=age0; age<=END; i++,age++){
       var f=Math.pow(1+infl,i), pf=Math.pow(1+prise,i);
-      var inc=pen*pf;
+      var inc=pen*adj*pf;
       var ev=0;
       EV.forEach(function(e){ if(age>=e.a&&age<=e.b) ev+=e.y; });
       evTotal+=ev*f;
@@ -268,7 +278,7 @@
 
     var shortfall=need-asset;
     $('tiles').innerHTML=
-      tile('今ある資産',fmt(asset)+'万円','')+
+      tile('そのとき持っている資産',fmt(asset)+'万円','')+
       tile(shortfall>0?'足りない金額':'余る金額',fmt(Math.abs(shortfall))+'万円',
            shortfall>0?'この分を準備できると安心です':'今の資産で足ります',shortfall>0?'ng':'ok')+
       tile('資産がなくなる年齢',dep?dep+'歳':'なし',dep?'':END+'歳まで持ちます',dep?'ng':'ok')+
@@ -322,7 +332,7 @@
     c.setAttribute('viewBox','0 0 '+W+' '+H); c.innerHTML=p.join('');
   }
 
-  ['age','endAge','pen','exp','asset','infl','prise','ret'].forEach(function(id){
+  ['penAge','endAge','pen','exp','asset','infl','prise','ret'].forEach(function(id){
     $(id).addEventListener('input',calc);
   });
   // 数字入力に − / ＋ ボタンを付ける（長押しで連続変更）
