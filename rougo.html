@@ -48,10 +48,23 @@
   .row:first-of-type{border-top:none}
   .row label{font-size:13.5px;font-weight:600;flex:1}
   .row label small{display:block;font-weight:400;font-size:11.5px;color:var(--ink-3);margin-top:1px}
-  .ipt{display:flex;align-items:baseline;gap:5px;flex:none}
-  .ipt input{width:5.2em;text-align:right;font:inherit;font-size:17px;font-weight:800;color:var(--orange);
+  .ipt{display:flex;align-items:center;gap:5px;flex:none}
+  .ipt input{width:4.3em;text-align:right;font:inherit;font-size:17px;font-weight:800;color:var(--orange);
     background:var(--gray-bg);border:1px solid transparent;border-radius:8px;padding:5px 8px;
-    font-variant-numeric:tabular-nums}
+    font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+  .ipt input::-webkit-outer-spin-button,.ipt input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .step{width:36px;height:36px;flex:none;border:1px solid var(--axis);background:var(--surface);
+    color:var(--teal);font:inherit;font-size:20px;font-weight:700;line-height:1;border-radius:9px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    touch-action:manipulation;-webkit-user-select:none;user-select:none;padding:0}
+  .step:active{background:var(--teal);color:var(--surface);border-color:var(--teal)}
+  @media (max-width:560px){
+    .row{flex-wrap:wrap;gap:4px}
+    .row label{flex:1 1 100%}
+    .ipt{margin-left:auto}
+    .step{width:38px;height:38px}
+    .ipt input{width:4.1em}
+  }
   .ipt input:focus{outline:none;border-color:var(--teal);background:var(--surface)}
   .ipt .u{font-size:12.5px;color:var(--ink-2);font-weight:600;white-space:nowrap}
 
@@ -171,7 +184,9 @@
 <div class="xlink">
   📈 資産をどう増やすか試算する →
   <a href="./index.html">積立シミュレーター</a> ／
-  <a href="./koteihi.html">固定費かんたん診断</a>
+  <a href="./koteihi.html">固定費かんたん診断</a><br>
+  🏠 家計全体とライフプランを一枚で見る →
+  <a href="https://fuku-sim.github.io/lifeplan/">家計4象限 × ライフプラン表</a>
 </div>
 
 <footer>
@@ -310,7 +325,42 @@
   ['age','endAge','pen','exp','asset','infl','prise','ret'].forEach(function(id){
     $(id).addEventListener('input',calc);
   });
-  renderEv(); calc();
+  // 数字入力に − / ＋ ボタンを付ける（長押しで連続変更）
+  function addSteppers(){
+    document.querySelectorAll('.ipt input[type=number]').forEach(function(inp){
+      if(inp.dataset.stepped) return;
+      inp.dataset.stepped='1';
+      function mk(t,lab){
+        var b=document.createElement('button');
+        b.type='button'; b.className='step'; b.textContent=t; b.setAttribute('aria-label',lab);
+        return b;
+      }
+      function bump(dir){
+        var st=parseFloat(inp.step)||1;
+        var mn=inp.min!==''?parseFloat(inp.min):-Infinity;
+        var mx=inp.max!==''?parseFloat(inp.max):Infinity;
+        var v=Math.min(mx,Math.max(mn,(parseFloat(inp.value)||0)+dir*st));
+        var dec=(String(st).split('.')[1]||'').length;
+        inp.value=dec?v.toFixed(dec):String(Math.round(v));
+        inp.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+      function bind(btn,dir){
+        var t1,t2;
+        function stop(){clearTimeout(t1);clearInterval(t2);}
+        btn.addEventListener('pointerdown',function(e){
+          e.preventDefault(); bump(dir);
+          t1=setTimeout(function(){t2=setInterval(function(){bump(dir)},80);},420);
+        });
+        ['pointerup','pointerleave','pointercancel'].forEach(function(ev){btn.addEventListener(ev,stop);});
+      }
+      var minus=mk('−','減らす'), plus=mk('＋','増やす');
+      inp.parentNode.insertBefore(minus,inp);
+      inp.insertAdjacentElement('afterend',plus);
+      bind(minus,-1); bind(plus,1);
+    });
+  }
+
+  addSteppers(); renderEv(); calc();
 })();
 </script>
 </body>
